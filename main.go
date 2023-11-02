@@ -245,7 +245,7 @@ func (r *RawYamlCmd) Run(cli *Cli) error {
 }
 
 type ParseCmd struct {
-	Type       string `help:"type of docker run argument to print. One of: ports, env, labels, args, volumes, links, run-image, boot-command, base-image, update-pups"`
+	Type       string `required:"" enum:"ports,env,labels,args,volumes,links,run-image,boot-command,base-image,update-pups" help:"type of docker run argument to print. Valid types: ports,env,labels,args,volumes,links,run-image,boot-command,base-image,update-pups"`
 	DockerArgs string `default:"" help:"Extra arguments to pass when running docker."`
 	Config     string `arg:"" name:"config" help:"configuration"`
 }
@@ -281,7 +281,7 @@ func (r *ParseCmd) Run(cli *Cli) error {
 	case "update-pups":
 		fmt.Fprint(Out, config.Update_Pups)
 	default:
-		return errors.New("Unknown parse type. Required -t one of: ports, env, labels, args, volumes, links, run-image, boot-command, base-image, update-pups")
+		return errors.New("Unknown parse type.")
 	}
 	return nil
 }
