@@ -32,8 +32,14 @@ func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
 	}
 
 	dir := cli.OutputDir + "/" + r.Config
-	if err := os.Mkdir(dir, 0755); err != nil && !os.IsExist(err) {
-		return err
+	if cli.ForceMkdir {
+		if err := os.MkdirAll(dir, 0755); err != nil && !os.IsExist(err) {
+			return err
+		}
+	} else {
+		if err := os.Mkdir(dir, 0755); err != nil && !os.IsExist(err) {
+			return err
+		}
 	}
 	if err := config.WriteYamlConfig(dir); err != nil {
 		return err
@@ -194,8 +200,14 @@ func (r *DockerComposeCmd) Run(cli *Cli, ctx *context.Context) error {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
 	dir := cli.OutputDir + "/" + r.Config
-	if err := os.Mkdir(dir, 0755); err != nil && !os.IsExist(err) {
-		return err
+	if cli.ForceMkdir {
+		if err := os.MkdirAll(dir, 0755); err != nil && !os.IsExist(err) {
+			return err
+		}
+	} else {
+		if err := os.Mkdir(dir, 0755); err != nil && !os.IsExist(err) {
+			return err
+		}
 	}
 	if err := config.WriteDockerCompose(dir, r.BakeEnv); err != nil {
 		return err
@@ -278,7 +290,7 @@ type Cli struct {
 	ConfDir       string             `short:"c" default:"./containers" help:"pups config directory"`
 	TemplatesDir  string             `short:"t" default:"." help:"parent directory containing a templates/ directory with pups yaml templates"`
 	OutputDir     string             `short:"o" default:"./tmp" help:"parent output folder"`
-	Mkdir         bool               `short:"f" help:"force-create parent output folder if not exists"` //TODO: actually do this flag
+	ForceMkdir    bool               `short:"f" help:"force-create parent output folder if not exists"`
 	DockerCompose DockerComposeCmd   `cmd:"" name:"docker-compose" help:"Create docker compose setup"`
 	RawYaml       RawYamlCmd         `cmd:"" name:"raw-yaml" help:"Print raw config, concatenated in pups format"`
 	ParseConfig   ParseCmd           `cmd:"" name:"parse" help:"Parse and print config for docker"`

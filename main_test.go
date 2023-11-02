@@ -73,6 +73,26 @@ var _ = Describe("Main", func() {
 		Expect(string(out[:])).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
 	})
 
+	It("does not create output parent folders when not asked", func() {
+		runner := ddocker.DockerComposeCmd{Config: "test"}
+		cli.OutputDir = testDir + "/subfolder/sub-subfolder"
+		err := runner.Run(cli, &ctx)
+		Expect(err).ToNot(BeNil())
+		_, err = os.ReadFile(testDir + "/subfolder/sub-subfolder/test/test.config.yaml")
+		Expect(err).ToNot(BeNil())
+	})
+
+	It("should force create output parent folders when asked", func() {
+		runner := ddocker.DockerComposeCmd{Config: "test"}
+		cli.ForceMkdir = true
+		cli.OutputDir = testDir + "/subfolder/sub-subfolder"
+		err := runner.Run(cli, &ctx)
+		Expect(err).To(BeNil())
+		out, err := os.ReadFile(testDir + "/subfolder/sub-subfolder/test/test.config.yaml")
+		Expect(err).To(BeNil())
+		Expect(string(out[:])).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
+	})
+
 	It("should clean after the command", func() {
 		runner := ddocker.DockerComposeCmd{Config: "test"}
 		runner.Run(cli, &ctx)
