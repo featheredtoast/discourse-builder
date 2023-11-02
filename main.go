@@ -303,7 +303,7 @@ var Cli struct {
 }
 
 func main() {
-	ctx := kong.Parse(&Cli)
+	ctx := kong.Parse(&Cli, kong.UsageOnError())
 	runCtx, cancel := context.WithCancel(context.Background())
 	runArgs := NewRunArgs(runCtx)
 	defer cancel()
