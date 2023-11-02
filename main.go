@@ -79,7 +79,7 @@ func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
 
 type DockerPupsCmd struct {
 	Config         string `arg:"" name:"config" help:"configuration"`
-	PupsArgs       string `short:"p" name:"pups-args" help:"Additional pups args to run with."`
+	PupsArgs       string `name:"pups-args" help:"Additional pups args to run with."`
 	SavedImageName string `short:"s" name:"saved-image" help:"Name of the resulting docker image. Image will only be committed if set."`
 	SkipEmber      bool   `name:"skip-ember" help:"Skip ember compile"`
 }
@@ -290,7 +290,7 @@ type Cli struct {
 	ConfDir       string             `short:"c" default:"./containers" help:"pups config directory"`
 	TemplatesDir  string             `short:"t" default:"." help:"parent directory containing a templates/ directory with pups yaml templates"`
 	OutputDir     string             `short:"o" default:"./tmp" help:"parent output folder"`
-	ForceMkdir    bool               `short:"f" help:"force-create parent output folder if not exists"`
+	ForceMkdir    bool               `short:"p" name:"parent-dirs" help:"Create intermediate output directories as required.  If this option is not specified, the full path prefix of each operand must already exist."`
 	DockerCompose DockerComposeCmd   `cmd:"" name:"docker-compose" help:"Create docker compose setup. The builder also generates an env file for you to source {conf}.env to handle multiline environment vars before running docker compose build"`
 	RawYaml       RawYamlCmd         `cmd:"" name:"raw-yaml" help:"Print raw config, concatenated in pups format"`
 	ParseConfig   ParseCmd           `cmd:"" name:"parse" help:"Parse and print config for docker"`
