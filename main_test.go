@@ -36,19 +36,21 @@ func CreateNewFakeCmdRunner(c chan ddocker.ICmdRunner) func(cmd *exec.Cmd) ddock
 var _ = Describe("Main", func() {
 	var testDir string
 	var out *bytes.Buffer
-	testConfDir := "./test/containers"
-	testTemplatesDir := "./test"
-	var runArgs ddocker.RunArgs
+	var cli *ddocker.Cli
+	var ctx context.Context
 
 	BeforeEach(func() {
 		out = &bytes.Buffer{}
 		ddocker.Out = out
 		testDir, _ = os.MkdirTemp("", "ddocker-test")
 
-		runArgs = ddocker.NewRunArgs(context.Background())
-		runArgs.ConfDir = testConfDir
-		runArgs.TemplatesDir = testTemplatesDir
-		runArgs.OutputDir = testDir
+		ctx = context.Background()
+
+		cli = &ddocker.Cli{
+			ConfDir:      "./test/containers",
+			TemplatesDir: "./test",
+			OutputDir:    testDir,
+		}
 	})
 	AfterEach(func() {
 		os.RemoveAll(testDir)
@@ -56,7 +58,7 @@ var _ = Describe("Main", func() {
 
 	It("should allow concatenated templates", func() {
 		runner := ddocker.RawYamlCmd{Config: "test"}
-		runner.Run(&runArgs)
+		runner.Run(cli)
 		Expect(out.String()).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
 		Expect(out.String()).To(ContainSubstring("_FILE_SEPERATOR_"))
 		Expect(out.String()).To(ContainSubstring("version: tests-passed"))
@@ -64,7 +66,7 @@ var _ = Describe("Main", func() {
 
 	It("should output docker compose cmd to config name's subdir", func() {
 		runner := ddocker.DockerComposeCmd{Config: "test"}
-		err := runner.Run(&runArgs)
+		err := runner.Run(cli, &ctx)
 		Expect(err).To(BeNil())
 		out, err := os.ReadFile(testDir + "/test/test.config.yaml")
 		Expect(err).To(BeNil())
@@ -73,9 +75,9 @@ var _ = Describe("Main", func() {
 
 	It("should clean after the command", func() {
 		runner := ddocker.DockerComposeCmd{Config: "test"}
-		runner.Run(&runArgs)
+		runner.Run(cli, &ctx)
 		runner2 := ddocker.CleanCmd{Config: "test"}
-		err := runner2.Run(&runArgs)
+		err := runner2.Run(cli)
 		Expect(err).To(BeNil())
 		_, err = os.ReadFile(testDir + "/test/test.config.yaml")
 		Expect(err).ToNot(BeNil())
@@ -95,7 +97,7 @@ var _ = Describe("Main", func() {
 
 		It("Should run docker build with correct arguments", func() {
 			runner := ddocker.DockerBuildCmd{Config: "test"}
-			go runner.Run(&runArgs)
+			go runner.Run(cli, &ctx)
 			icmd := <-CmdCreatorWatcher
 			cmd, _ := icmd.(*FakeCmdRunner)
 			Expect(cmd.RunCalls).To(Equal(1))
@@ -112,7 +114,7 @@ var _ = Describe("Main", func() {
 
 		It("Should run docker migrate with correct arguments", func() {
 			runner := ddocker.DockerMigrateCmd{Config: "test"}
-			go runner.Run(&runArgs)
+			go runner.Run(cli, &ctx)
 			icmd := <-CmdCreatorWatcher
 			cmd, _ := icmd.(*FakeCmdRunner)
 			Expect(cmd.RunCalls).To(Equal(1))
@@ -127,7 +129,7 @@ var _ = Describe("Main", func() {
 
 		It("Should run docker run followed by docker commit when configuring", func() {
 			runner := ddocker.DockerConfigureCmd{Config: "test"}
-			go runner.Run(&runArgs)
+			go runner.Run(cli, &ctx)
 			icmd := <-CmdCreatorWatcher
 			cmd, _ := icmd.(*FakeCmdRunner)
 			Expect(cmd.RunCalls).To(Equal(1))

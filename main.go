@@ -19,36 +19,19 @@ import (
 
 var Out io.Writer = os.Stdout
 
-type RunArgs struct {
-	Context      context.Context
-	ConfDir      string
-	TemplatesDir string
-	OutputDir    string
-}
-
-func NewRunArgs(ctx context.Context) RunArgs {
-	return RunArgs{
-		Context:      ctx,
-		ConfDir:      "./containers",
-		TemplatesDir: ".",
-		OutputDir:    "./tmp",
-	}
-}
-
 type DockerBuildCmd struct {
 	BakeEnv bool `short:"e" help:"Bake in the configured environment to image after build."`
 
 	Config string `arg:"" name:"config" help:"configuration"`
 }
 
-func (r *DockerBuildCmd) Run(args *RunArgs) error {
-	ctx := args.Context
-	config, err := config.LoadConfig(args.ConfDir, r.Config, true, args.TemplatesDir)
+func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
+	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
 
-	dir := args.OutputDir + "/" + r.Config
+	dir := cli.OutputDir + "/" + r.Config
 	if err := os.Mkdir(dir, 0755); err != nil && !os.IsExist(err) {
 		return err
 	}
@@ -56,7 +39,7 @@ func (r *DockerBuildCmd) Run(args *RunArgs) error {
 		return err
 	}
 
-	cmd := exec.CommandContext(ctx, "docker", "build")
+	cmd := exec.CommandContext(*ctx, "docker", "build")
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd.Cancel = func() error {
 		return unix.Kill(-cmd.Process.Pid, unix.SIGINT)
@@ -83,7 +66,7 @@ func (r *DockerBuildCmd) Run(args *RunArgs) error {
 		return err
 	}
 	cleaner := CleanCmd{Config: r.Config}
-	cleaner.Run(args)
+	cleaner.Run(cli)
 
 	return nil
 }
@@ -95,15 +78,14 @@ type DockerPupsCmd struct {
 	SkipEmber      bool   `name:"skip-ember" help:"Skip ember compile"`
 }
 
-func (r *DockerPupsCmd) Run(args *RunArgs) error {
-	ctx := args.Context
-	config, err := config.LoadConfig(args.ConfDir, r.Config, true, args.TemplatesDir)
+func (r *DockerPupsCmd) Run(cli *Cli, ctx *context.Context) error {
+	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
 
 	containerId := "discourse-build-" + uuid.NewString()
-	cmd := exec.CommandContext(ctx, "docker", "run")
+	cmd := exec.CommandContext(*ctx, "docker", "run")
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd.Cancel = func() error {
 		return unix.Kill(-cmd.Process.Pid, unix.SIGINT)
@@ -155,7 +137,7 @@ func (r *DockerPupsCmd) Run(args *RunArgs) error {
 		return err
 	}
 	cleaner := CleanCmd{Config: r.Config}
-	cleaner.Run(args)
+	cleaner.Run(cli)
 
 	if len(r.SavedImageName) > 0 {
 		cmd := exec.Command("docker",
@@ -178,26 +160,26 @@ type DockerConfigureCmd struct {
 	Config string `arg:"" name:"config" help:"configuration"`
 }
 
-func (r *DockerConfigureCmd) Run(args *RunArgs) error {
+func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
 	pups := DockerPupsCmd{
 		Config:         r.Config,
 		PupsArgs:       "--tags=db,precompile",
 		SavedImageName: "local_discourse/" + r.Config,
 	}
-	return pups.Run(args)
+	return pups.Run(cli, ctx)
 }
 
 type DockerMigrateCmd struct {
 	Config string `arg:"" name:"config" help:"configuration"`
 }
 
-func (r *DockerMigrateCmd) Run(args *RunArgs) error {
+func (r *DockerMigrateCmd) Run(cli *Cli, ctx *context.Context) error {
 	pups := DockerPupsCmd{
 		Config:    r.Config,
 		PupsArgs:  "--tags=db,migrate",
 		SkipEmber: true,
 	}
-	return pups.Run(args)
+	return pups.Run(cli, ctx)
 }
 
 type DockerComposeCmd struct {
@@ -206,12 +188,12 @@ type DockerComposeCmd struct {
 	Config string `arg:"" name:"config" help:"configuration"`
 }
 
-func (r *DockerComposeCmd) Run(args *RunArgs) error {
-	config, err := config.LoadConfig(args.ConfDir, r.Config, true, args.TemplatesDir)
+func (r *DockerComposeCmd) Run(cli *Cli, ctx *context.Context) error {
+	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
-	dir := args.OutputDir + "/" + r.Config
+	dir := cli.OutputDir + "/" + r.Config
 	if err := os.Mkdir(dir, 0755); err != nil && !os.IsExist(err) {
 		return err
 	}
@@ -225,8 +207,8 @@ type CleanCmd struct {
 	Config string `arg:"" name:"config" help:"config to clean"`
 }
 
-func (r *CleanCmd) Run(args *RunArgs) error {
-	dir := args.OutputDir + "/" + r.Config
+func (r *CleanCmd) Run(cli *Cli) error {
+	dir := cli.OutputDir + "/" + r.Config
 	os.Remove(dir + "/docker-compose.yaml")
 	os.Remove(dir + "/" + r.Config + ".config.yaml")
 	os.Remove(dir + "/" + r.Config + ".env")
@@ -241,8 +223,8 @@ type RawYamlCmd struct {
 	Config string `arg:"" name:"config" help:"configuration"`
 }
 
-func (r *RawYamlCmd) Run(args *RunArgs) error {
-	config, err := config.LoadConfig(args.ConfDir, r.Config, true, args.TemplatesDir)
+func (r *RawYamlCmd) Run(cli *Cli) error {
+	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
@@ -251,13 +233,13 @@ func (r *RawYamlCmd) Run(args *RunArgs) error {
 }
 
 type ParseCmd struct {
-	Type       string `short:"t" help:"type of docker run argument to print. One of: ports, env, labels, args, volumes, links, run-image, boot-command, base-image, update-pups"`
+	Type       string `help:"type of docker run argument to print. One of: ports, env, labels, args, volumes, links, run-image, boot-command, base-image, update-pups"`
 	DockerArgs string `default:"" help:"Extra arguments to pass when running docker."`
 	Config     string `arg:"" name:"config" help:"configuration"`
 }
 
-func (r *ParseCmd) Run(args *RunArgs) error {
-	config, err := config.LoadConfig(args.ConfDir, r.Config, true, args.TemplatesDir)
+func (r *ParseCmd) Run(cli *Cli) error {
+	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
@@ -292,7 +274,11 @@ func (r *ParseCmd) Run(args *RunArgs) error {
 	return nil
 }
 
-var Cli struct {
+type Cli struct {
+	ConfDir       string             `short:"c" default:"./containers" help:"pups config directory"`
+	TemplatesDir  string             `short:"t" default:"." help:"parent directory containing a templates/ directory with pups yaml templates"`
+	OutputDir     string             `short:"o" default:"./tmp" help:"parent output folder"`
+	Mkdir         bool               `short:"f" help:"force-create parent output folder if not exists"` //TODO: actually do this flag
 	DockerCompose DockerComposeCmd   `cmd:"" name:"docker-compose" help:"Create docker compose setup"`
 	RawYaml       RawYamlCmd         `cmd:"" name:"raw-yaml" help:"Print raw config, concatenated in pups format"`
 	ParseConfig   ParseCmd           `cmd:"" name:"parse" help:"Parse and print config for docker"`
@@ -303,9 +289,9 @@ var Cli struct {
 }
 
 func main() {
-	ctx := kong.Parse(&Cli, kong.UsageOnError())
+	cli := Cli{}
 	runCtx, cancel := context.WithCancel(context.Background())
-	runArgs := NewRunArgs(runCtx)
+	ctx := kong.Parse(&cli, kong.UsageOnError(), kong.Bind(&runCtx))
 	defer cancel()
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, unix.SIGTERM)
@@ -320,7 +306,7 @@ func main() {
 		case <-done:
 		}
 	}()
-	err := ctx.Run(&runArgs)
+	err := ctx.Run()
 	if err == nil {
 		return
 	}
