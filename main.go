@@ -189,7 +189,7 @@ func (r *DockerMigrateCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type DockerComposeCmd struct {
-	BakeEnv bool `short:"e" help:"Bake in the configured environment to image after build. Requires a 'source {config}.env' before running."`
+	BakeEnv bool `short:"e" help:"Bake in the configured environment to image after build."`
 
 	Config string `arg:"" name:"config" help:"configuration"`
 }
@@ -291,7 +291,7 @@ type Cli struct {
 	TemplatesDir  string             `short:"t" default:"." help:"parent directory containing a templates/ directory with pups yaml templates"`
 	OutputDir     string             `short:"o" default:"./tmp" help:"parent output folder"`
 	ForceMkdir    bool               `short:"f" help:"force-create parent output folder if not exists"`
-	DockerCompose DockerComposeCmd   `cmd:"" name:"docker-compose" help:"Create docker compose setup"`
+	DockerCompose DockerComposeCmd   `cmd:"" name:"docker-compose" help:"Create docker compose setup. The builder also generates an env file for you to source {conf}.env to handle multiline environment vars before running docker compose build"`
 	RawYaml       RawYamlCmd         `cmd:"" name:"raw-yaml" help:"Print raw config, concatenated in pups format"`
 	ParseConfig   ParseCmd           `cmd:"" name:"parse" help:"Parse and print config for docker"`
 	BuildCmd      DockerBuildCmd     `cmd:"" name:"build" help:"Build a base image with no dependencies."`
