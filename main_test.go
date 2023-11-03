@@ -15,11 +15,11 @@ import (
 
 type FakeCmdRunner struct {
 	Cmd      *exec.Cmd
-	RunCalls int
+	RunCalls chan int
 }
 
 func (r *FakeCmdRunner) Run() error {
-	r.RunCalls = r.RunCalls + 1
+	r.RunCalls<- 1
 	return nil
 }
 
@@ -27,7 +27,7 @@ func (r *FakeCmdRunner) Run() error {
 // so tests can inspect commands the moment they're run
 func CreateNewFakeCmdRunner(c chan ddocker.ICmdRunner) func(cmd *exec.Cmd) ddocker.ICmdRunner {
 	return func(cmd *exec.Cmd) ddocker.ICmdRunner {
-		cmdRunner := &FakeCmdRunner{Cmd: cmd, RunCalls: 0}
+		cmdRunner := &FakeCmdRunner{Cmd: cmd, RunCalls: make(chan int)}
 		c <- cmdRunner
 		return cmdRunner
 	}
@@ -120,7 +120,7 @@ var _ = Describe("Main", func() {
 			go runner.Run(cli, &ctx)
 			icmd := <-CmdCreatorWatcher
 			cmd, _ := icmd.(*FakeCmdRunner)
-			Expect(cmd.RunCalls).To(Equal(1))
+			<-cmd.RunCalls
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker build"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("--build-arg DISCOURSE_DEVELOPER_EMAILS"))
 			Expect(cmd.Cmd.Dir).To(Equal(testDir + "/test"))
@@ -137,7 +137,7 @@ var _ = Describe("Main", func() {
 			go runner.Run(cli, &ctx)
 			icmd := <-CmdCreatorWatcher
 			cmd, _ := icmd.(*FakeCmdRunner)
-			Expect(cmd.RunCalls).To(Equal(1))
+			<-cmd.RunCalls
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("-e DISCOURSE_DEVELOPER_EMAILS"))
 			Expect(cmd.Cmd.Env).To(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
@@ -152,7 +152,7 @@ var _ = Describe("Main", func() {
 			go runner.Run(cli, &ctx)
 			icmd := <-CmdCreatorWatcher
 			cmd, _ := icmd.(*FakeCmdRunner)
-			Expect(cmd.RunCalls).To(Equal(1))
+			<-cmd.RunCalls
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("-e DISCOURSE_DEVELOPER_EMAILS"))
 			Expect(cmd.Cmd.Env).To(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
@@ -163,7 +163,7 @@ var _ = Describe("Main", func() {
 
 			icmd = <-CmdCreatorWatcher
 			cmd, _ = icmd.(*FakeCmdRunner)
-			Expect(cmd.RunCalls).To(Equal(1))
+			<-cmd.RunCalls
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker commit"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("discourse-build"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("local_discourse/test"))
