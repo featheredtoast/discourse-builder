@@ -6,7 +6,7 @@ import (
 
 	"bytes"
 	"context"
-	ddocker "github.com/discourse/discourse-builder"
+	ddocker "github.com/discourse/discourse_docker/discourse-builder"
 	"io"
 	"os"
 	"os/exec"

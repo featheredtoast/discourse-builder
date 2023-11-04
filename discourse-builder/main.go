@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alecthomas/kong"
-	"github.com/discourse/discourse-builder/config"
+	"github.com/discourse/discourse_docker/discourse-builder/config"
 	"github.com/google/uuid"
 	"golang.org/x/sys/unix"
 	"io"

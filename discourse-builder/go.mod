@@ -1,4 +1,4 @@
-module github.com/discourse/discourse-builder
+module github.com/discourse/discourse_docker/discourse-builder
 
 go 1.21
 
