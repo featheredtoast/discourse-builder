@@ -50,6 +50,7 @@ var _ = Describe("Main", func() {
 			ConfDir:      "./test/containers",
 			TemplatesDir: "./test",
 			OutputDir:    testDir,
+			ContainerId: "discourse-build-asdf",
 		}
 	})
 	AfterEach(func() {
@@ -173,7 +174,7 @@ var _ = Describe("Main", func() {
 
 			//cleanup is run to remove image
 			cmd = getLastCommand()
-			Expect(cmd.Cmd.String()).To(ContainSubstring("docker rm discourse-build"))
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker rm -f discourse-build"))
 		})
 	})
 })

@@ -92,7 +92,6 @@ func (r *DockerPupsCmd) Run(cli *Cli, ctx *context.Context) error {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
 
-	containerId := "discourse-build-" + uuid.NewString()
 	cmd := exec.CommandContext(*ctx, "docker", "run")
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd.Cancel = func() error {
@@ -134,7 +133,7 @@ func (r *DockerPupsCmd) Run(cli *Cli, ctx *context.Context) error {
 		cmd.Args = append(cmd.Args, "--rm")
 	}
 	cmd.Args = append(cmd.Args, "--name")
-	cmd.Args = append(cmd.Args, containerId)
+	cmd.Args = append(cmd.Args, cli.ContainerId)
 	cmd.Args = append(cmd.Args, "-i")
 	cmd.Args = append(cmd.Args, "local_discourse/"+config.Name)
 	cmd.Args = append(cmd.Args, "/bin/bash")
@@ -146,15 +145,12 @@ func (r *DockerPupsCmd) Run(cli *Cli, ctx *context.Context) error {
 	if err := CmdRunner(cmd).Run(); err != nil {
 		return err
 	}
-	cleaner := CleanCmd{Config: r.Config}
-	cleaner.Run(cli)
-
 	if len(r.SavedImageName) > 0 {
 		cmd := exec.Command("docker",
 			"commit",
 			"--change",
 			"LABEL org.opencontainers.image.created=\""+time.Now().Format(time.RFC3339)+"\"",
-			containerId,
+			cli.ContainerId,
 			"local_discourse/"+config.Name,
 		)
 		cmd.Stdout = os.Stdout
@@ -162,12 +158,16 @@ func (r *DockerPupsCmd) Run(cli *Cli, ctx *context.Context) error {
 		if err := CmdRunner(cmd).Run(); err != nil {
 			return err
 		}
-
-		cmd = exec.CommandContext(*ctx, "docker", "rm", containerId)
-		if err = CmdRunner(cmd).Run(); err != nil {
-			return err
-		}
 	}
+
+	if len(r.SavedImageName) > 0 {
+		cleaner := CleanCmd{Config: r.Config, CleanContainer: true}
+		cleaner.Run(cli)
+	} else {
+		cleaner := CleanCmd{Config: r.Config}
+		cleaner.Run(cli)
+	}
+
 
 	return nil
 }
@@ -227,6 +227,7 @@ func (r *DockerComposeCmd) Run(cli *Cli, ctx *context.Context) error {
 
 type CleanCmd struct {
 	Config string `arg:"" name:"config" help:"config to clean"`
+	CleanContainer bool `help:"remove and clean build containers"`
 }
 
 func (r *CleanCmd) Run(cli *Cli) error {
@@ -235,6 +236,16 @@ func (r *CleanCmd) Run(cli *Cli) error {
 	os.Remove(dir + "/config.yaml")
 	os.Remove(dir + "/.envrc")
 	os.Remove(dir + "/" + "Dockerfile")
+
+	//clean up container
+	if(r.CleanContainer) {
+		runCtx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
+		defer cancel()
+		cmd := exec.CommandContext(runCtx, "docker", "rm", "-f", cli.ContainerId)
+		if err := CmdRunner(cmd).Run(); err != nil {
+			return err
+		}
+	}
 	if err := os.Remove(dir); err != nil {
 		return err
 	}
@@ -300,6 +311,7 @@ type Cli struct {
 	ConfDir       string             `short:"c" default:"./containers" help:"pups config directory"`
 	TemplatesDir  string             `short:"t" default:"." help:"parent directory containing a templates/ directory with pups yaml templates"`
 	OutputDir     string             `short:"o" default:"./tmp" help:"parent output folder"`
+	ContainerId   string             `hidden:"" optional:""`
 	ForceMkdir    bool               `short:"p" name:"parent-dirs" help:"Create intermediate output directories as required.  If this option is not specified, the full path prefix of each operand must already exist."`
 	DockerCompose DockerComposeCmd   `cmd:"" name:"docker-compose" help:"Create docker compose setup. The builder also generates an env file for you to source {conf}.env to handle multiline environment vars before running docker compose build"`
 	RawYaml       RawYamlCmd         `cmd:"" name:"raw-yaml" help:"Print raw config, concatenated in pups format"`
@@ -314,6 +326,9 @@ func main() {
 	cli := Cli{}
 	runCtx, cancel := context.WithCancel(context.Background())
 	ctx := kong.Parse(&cli, kong.UsageOnError(), kong.Bind(&runCtx))
+	if cli.ContainerId == "" {
+		cli.ContainerId = "discourse-build-" + uuid.NewString()
+	}
 	defer cancel()
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, unix.SIGTERM)
