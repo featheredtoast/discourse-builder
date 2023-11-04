@@ -273,6 +273,7 @@ func (config *Config) ExportEnv() string {
 	builder := strings.Builder{}
 	for k, v := range config.Env {
 		val := strings.ReplaceAll(v, "{{config}}", config.Name)
+		val = strings.ReplaceAll(val, "\\", "\\\\")
 		val = strings.ReplaceAll(val, "\"", "\\\"")
 		builder.WriteString("export " + k + "=\"" + val + "\"\n")
 	}
