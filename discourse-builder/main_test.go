@@ -19,7 +19,7 @@ type FakeCmdRunner struct {
 }
 
 func (r *FakeCmdRunner) Run() error {
-	r.RunCalls<- 1
+	r.RunCalls <- 1
 	return nil
 }
 
@@ -68,7 +68,7 @@ var _ = Describe("Main", func() {
 		runner := ddocker.DockerComposeCmd{Config: "test"}
 		err := runner.Run(cli, &ctx)
 		Expect(err).To(BeNil())
-		out, err := os.ReadFile(testDir + "/test/test.config.yaml")
+		out, err := os.ReadFile(testDir + "/test/config.yaml")
 		Expect(err).To(BeNil())
 		Expect(string(out[:])).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
 	})
@@ -78,7 +78,7 @@ var _ = Describe("Main", func() {
 		cli.OutputDir = testDir + "/subfolder/sub-subfolder"
 		err := runner.Run(cli, &ctx)
 		Expect(err).ToNot(BeNil())
-		_, err = os.ReadFile(testDir + "/subfolder/sub-subfolder/test/test.config.yaml")
+		_, err = os.ReadFile(testDir + "/subfolder/sub-subfolder/test/config.yaml")
 		Expect(err).ToNot(BeNil())
 	})
 
@@ -88,7 +88,7 @@ var _ = Describe("Main", func() {
 		cli.OutputDir = testDir + "/subfolder/sub-subfolder"
 		err := runner.Run(cli, &ctx)
 		Expect(err).To(BeNil())
-		out, err := os.ReadFile(testDir + "/subfolder/sub-subfolder/test/test.config.yaml")
+		out, err := os.ReadFile(testDir + "/subfolder/sub-subfolder/test/config.yaml")
 		Expect(err).To(BeNil())
 		Expect(string(out[:])).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
 	})
@@ -99,13 +99,19 @@ var _ = Describe("Main", func() {
 		runner2 := ddocker.CleanCmd{Config: "test"}
 		err := runner2.Run(cli)
 		Expect(err).To(BeNil())
-		_, err = os.ReadFile(testDir + "/test/test.config.yaml")
+		_, err = os.ReadFile(testDir + "/test/config.yaml")
 		Expect(err).ToNot(BeNil())
 	})
 
 	Context("When running docker commands", func() {
 
 		var CmdCreatorWatcher chan ddocker.ICmdRunner
+		var getLastCommand = func() *FakeCmdRunner {
+			icmd := <-CmdCreatorWatcher
+			cmd, _ := icmd.(*FakeCmdRunner)
+			<-cmd.RunCalls
+			return cmd
+		}
 
 		BeforeEach(func() {
 			CmdCreatorWatcher = make(chan ddocker.ICmdRunner)
@@ -118,9 +124,7 @@ var _ = Describe("Main", func() {
 		It("Should run docker build with correct arguments", func() {
 			runner := ddocker.DockerBuildCmd{Config: "test"}
 			go runner.Run(cli, &ctx)
-			icmd := <-CmdCreatorWatcher
-			cmd, _ := icmd.(*FakeCmdRunner)
-			<-cmd.RunCalls
+			cmd := getLastCommand()
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker build"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("--build-arg DISCOURSE_DEVELOPER_EMAILS"))
 			Expect(cmd.Cmd.Dir).To(Equal(testDir + "/test"))
@@ -128,18 +132,18 @@ var _ = Describe("Main", func() {
 			buf := new(strings.Builder)
 			io.Copy(buf, cmd.Cmd.Stdin)
 			// docker build's stdin is a dockerfile
-			Expect(buf.String()).To(ContainSubstring("COPY ./test.config.yaml /temp-config.yaml"))
+			Expect(buf.String()).To(ContainSubstring("COPY config.yaml /temp-config.yaml"))
 			Expect(buf.String()).To(ContainSubstring("--skip-tags=precompile,migrate,db"))
 		})
 
 		It("Should run docker migrate with correct arguments", func() {
 			runner := ddocker.DockerMigrateCmd{Config: "test"}
 			go runner.Run(cli, &ctx)
-			icmd := <-CmdCreatorWatcher
-			cmd, _ := icmd.(*FakeCmdRunner)
-			<-cmd.RunCalls
+			cmd := getLastCommand()
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("-e DISCOURSE_DEVELOPER_EMAILS"))
+			// no commit after, we expect an --rm as the container isn't needed after it is stopped
+			Expect(cmd.Cmd.String()).To(ContainSubstring("--rm"))
 			Expect(cmd.Cmd.Env).To(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
 			buf := new(strings.Builder)
 			io.Copy(buf, cmd.Cmd.Stdin)
@@ -147,28 +151,29 @@ var _ = Describe("Main", func() {
 			Expect(buf.String()).To(ContainSubstring("path: /etc/service/nginx/run"))
 		})
 
-		It("Should run docker run followed by docker commit when configuring", func() {
+		It("Should run docker run followed by docker commit and rm container when configuring", func() {
 			runner := ddocker.DockerConfigureCmd{Config: "test"}
 			go runner.Run(cli, &ctx)
-			icmd := <-CmdCreatorWatcher
-			cmd, _ := icmd.(*FakeCmdRunner)
-			<-cmd.RunCalls
+			cmd := getLastCommand()
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("-e DISCOURSE_DEVELOPER_EMAILS"))
+			// we commit, we need the container to stick around after it is stopped.
+			Expect(cmd.Cmd.String()).ToNot(ContainSubstring("--rm"))
 			Expect(cmd.Cmd.Env).To(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
 			buf := new(strings.Builder)
 			io.Copy(buf, cmd.Cmd.Stdin)
 			// docker run's stdin is a pups config
 			Expect(buf.String()).To(ContainSubstring("path: /etc/service/nginx/run"))
 
-			icmd = <-CmdCreatorWatcher
-			cmd, _ = icmd.(*FakeCmdRunner)
-			<-cmd.RunCalls
+			cmd = getLastCommand()
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker commit"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("discourse-build"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("local_discourse/test"))
 			Expect(cmd.Cmd.Env).ToNot(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
+
+			//cleanup is run to remove image
+			cmd = getLastCommand()
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker rm discourse-build"))
 		})
 	})
-
 })

@@ -69,7 +69,7 @@ func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	pupsArgs := "--skip-tags=precompile,migrate,db"
-	cmd.Stdin = strings.NewReader(config.Dockerfile("./"+config.Name+".config.yaml", pupsArgs, r.BakeEnv))
+	cmd.Stdin = strings.NewReader(config.Dockerfile(pupsArgs, r.BakeEnv))
 	if err := CmdRunner(cmd).Run(); err != nil {
 		return err
 	}
@@ -129,8 +129,10 @@ func (r *DockerPupsCmd) Run(cli *Cli, ctx *context.Context) error {
 		cmd.Args = append(cmd.Args, "--link")
 		cmd.Args = append(cmd.Args, v.Link.Name+":"+v.Link.Alias)
 	}
-	cmd.Args = append(cmd.Args, "--rm")
 	cmd.Args = append(cmd.Args, "--shm-size=512m")
+	if len(r.SavedImageName) <= 0 {
+		cmd.Args = append(cmd.Args, "--rm")
+	}
 	cmd.Args = append(cmd.Args, "--name")
 	cmd.Args = append(cmd.Args, containerId)
 	cmd.Args = append(cmd.Args, "-i")
@@ -157,8 +159,14 @@ func (r *DockerPupsCmd) Run(cli *Cli, ctx *context.Context) error {
 		)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		cmd.Stdin = strings.NewReader(config.Yaml())
-		CmdRunner(cmd).Run()
+		if err := CmdRunner(cmd).Run(); err != nil {
+			return err
+		}
+
+		cmd = exec.CommandContext(*ctx, "docker", "rm", containerId)
+		if err = CmdRunner(cmd).Run(); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -224,9 +232,9 @@ type CleanCmd struct {
 func (r *CleanCmd) Run(cli *Cli) error {
 	dir := cli.OutputDir + "/" + r.Config
 	os.Remove(dir + "/docker-compose.yaml")
-	os.Remove(dir + "/" + r.Config + ".config.yaml")
-	os.Remove(dir + "/" + r.Config + ".env")
-	os.Remove(dir + "/" + "Dockerfile." + r.Config)
+	os.Remove(dir + "/config.yaml")
+	os.Remove(dir + "/.envrc")
+	os.Remove(dir + "/" + "Dockerfile")
 	if err := os.Remove(dir); err != nil {
 		return err
 	}

@@ -172,7 +172,7 @@ func (config *Config) WriteDockerCompose(dir string, bakeEnv bool) error {
 		Services: ComposeAppService{
 			App: ComposeService{
 				Build: ComposeBuild{
-					Dockerfile: "./Dockerfile." + config.Name,
+					Dockerfile: "./Dockerfile",
 					Labels:     labels,
 					Shm_Size:   "512m",
 					Args:       args,
@@ -202,25 +202,25 @@ func (config *Config) WriteDockerCompose(dir string, bakeEnv bool) error {
 }
 
 func (config *Config) WriteDockerfile(dir string, pupsArgs string, bakeEnv bool) error {
-	pupsConfig := config.Name + ".config.yaml"
 	if err := config.WriteYamlConfig(dir); err != nil {
 		return err
 	}
 
-	if err := os.WriteFile(strings.TrimRight(dir, "/")+"/"+"Dockerfile."+config.Name, []byte(config.Dockerfile(pupsConfig, pupsArgs, bakeEnv)), 0666); err != nil {
-		return errors.New("error writing dockerfile Dockerfile." + config.Name)
+	file := strings.TrimRight(dir, "/")+"/"+"Dockerfile"
+	if err := os.WriteFile(file, []byte(config.Dockerfile(pupsArgs, bakeEnv)), 0666); err != nil {
+		return errors.New("error writing dockerfile Dockerfile " + file)
 	}
 	return nil
 }
 
-func (config *Config) Dockerfile(pupsConfig string, pupsArgs string, bakeEnv bool) string {
+func (config *Config) Dockerfile(pupsArgs string, bakeEnv bool) string {
 	builder := strings.Builder{}
 	builder.WriteString("FROM " + config.Base_Image + "\n")
 	builder.WriteString(config.DockerfileArgs() + "\n")
 	if bakeEnv {
 		builder.WriteString(config.DockerfileEnvs() + "\n")
 	}
-	builder.WriteString("COPY " + pupsConfig + " /temp-config.yaml\n")
+	builder.WriteString("COPY config.yaml /temp-config.yaml\n")
 	builder.WriteString("RUN " +
 		"cat /temp-config.yaml | /usr/local/bin/pups " + pupsArgs + " --stdin " +
 		"&& rm /temp-config.yaml\n")
@@ -229,15 +229,17 @@ func (config *Config) Dockerfile(pupsConfig string, pupsArgs string, bakeEnv boo
 }
 
 func (config *Config) WriteYamlConfig(dir string) error {
-	if err := os.WriteFile(strings.TrimRight(dir, "/")+"/"+config.Name+".config.yaml", []byte(config.Yaml()), 0666); err != nil {
-		return errors.New("error writing config file " + strings.TrimRight(dir, "/") + "/" + config.Name + ".config.yaml")
+	file := strings.TrimRight(dir, "/")+"/config.yaml"
+	if err := os.WriteFile(file, []byte(config.Yaml()), 0666); err != nil {
+		return errors.New("error writing config file " + file)
 	}
 	return nil
 }
 
 func (config *Config) WriteEnvConfig(dir string) error {
-	if err := os.WriteFile(strings.TrimRight(dir, "/")+"/"+config.Name+".env", []byte(config.ExportEnv()), 0666); err != nil {
-		return errors.New("error writing export env " + strings.TrimRight(dir, "/") + "/" + config.Name + ".env")
+	file := strings.TrimRight(dir, "/")+"/.envrc"
+	if err := os.WriteFile(file, []byte(config.ExportEnv()), 0666); err != nil {
+		return errors.New("error writing export env " + file)
 	}
 	return nil
 }

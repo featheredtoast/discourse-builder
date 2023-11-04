@@ -31,7 +31,7 @@ var _ = Describe("Config", func() {
 	It("can write raw yaml config", func() {
 		err := conf.WriteYamlConfig(testDir)
 		Expect(err).To(BeNil())
-		out, err := os.ReadFile(testDir + "/test.config.yaml")
+		out, err := os.ReadFile(testDir + "/config.yaml")
 		Expect(err).To(BeNil())
 		Expect(strings.Contains(string(out[:]), ""))
 		Expect(string(out[:])).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
@@ -39,30 +39,30 @@ var _ = Describe("Config", func() {
 
 	It("can write env file", func() {
 		conf.WriteEnvConfig(testDir)
-		out, err := os.ReadFile(testDir + "/test.env")
+		out, err := os.ReadFile(testDir + "/.envrc")
 		Expect(err).To(BeNil())
 		Expect(string(out[:])).To(ContainSubstring("export DISCOURSE_HOSTNAME"))
 	})
 
 	It("can write a dockerfile", func() {
 		conf.WriteDockerfile(testDir, "", false)
-		out, err := os.ReadFile(testDir + "/test.config.yaml")
+		out, err := os.ReadFile(testDir + "/config.yaml")
 		Expect(err).To(BeNil())
 		Expect(string(out[:])).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
-		out, err = os.ReadFile(testDir + "/Dockerfile.test")
+		out, err = os.ReadFile(testDir + "/Dockerfile")
 		Expect(err).To(BeNil())
 		Expect(string(out[:])).To(ContainSubstring("RUN cat /temp-config.yaml"))
 	})
 
 	It("can write a docker compose setup", func() {
 		conf.WriteDockerCompose(testDir, false)
-		out, err := os.ReadFile(testDir + "/test.env")
+		out, err := os.ReadFile(testDir + "/.envrc")
 		Expect(err).To(BeNil())
 		Expect(string(out[:])).To(ContainSubstring("export DISCOURSE_HOSTNAME"))
-		out, err = os.ReadFile(testDir + "/test.config.yaml")
+		out, err = os.ReadFile(testDir + "/config.yaml")
 		Expect(err).To(BeNil())
 		Expect(string(out[:])).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
-		out, err = os.ReadFile(testDir + "/Dockerfile.test")
+		out, err = os.ReadFile(testDir + "/Dockerfile")
 		Expect(err).To(BeNil())
 		Expect(string(out[:])).To(ContainSubstring("RUN cat /temp-config.yaml"))
 
