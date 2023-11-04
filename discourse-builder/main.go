@@ -57,6 +57,8 @@ func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
 		cmd.Args = append(cmd.Args, "--build-arg")
 		cmd.Args = append(cmd.Args, k)
 	}
+	cmd.Args = append(cmd.Args, "--no-cache")
+	cmd.Args = append(cmd.Args, "--pull")
 	cmd.Args = append(cmd.Args, "--force-rm")
 	cmd.Args = append(cmd.Args, "-t")
 	cmd.Args = append(cmd.Args, "local_discourse/"+config.Name)
