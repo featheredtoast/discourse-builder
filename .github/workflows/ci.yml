@@ -44,10 +44,10 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
-          overwrite: true
-          release_tag: latest
           project_path: ./discourse-builder
           binary_name: discourse-builder
+          overwrite: true
+          release_tag: latest
 
   build_release:
     if: github.event_name == 'release'
