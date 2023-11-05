@@ -192,6 +192,26 @@ func (r *DockerMigrateCmd) Run(cli *Cli, ctx *context.Context) error {
 	return pups.Run(cli, ctx)
 }
 
+type DockerBootstrapCmd struct {
+	Config string `arg:"" name:"config" help:"configuration"`
+}
+
+func (r *DockerBootstrapCmd) Run(cli *Cli, ctx *context.Context) error {
+	buildStep := DockerBuildCmd{Config: r.Config, BakeEnv: false}
+	migrateStep := DockerMigrateCmd{Config: r.Config}
+	configureStep := DockerConfigureCmd{Config: r.Config}
+	if err := buildStep.Run(cli, ctx); err != nil {
+		return err
+	}
+	if err := migrateStep.Run(cli, ctx); err != nil {
+		return err
+	}
+	if err := configureStep.Run(cli, ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
 type DockerComposeCmd struct {
 	BakeEnv bool `short:"e" help:"Bake in the configured environment to image after build."`
 
@@ -302,6 +322,7 @@ type Cli struct {
 	BuildCmd      DockerBuildCmd     `cmd:"" name:"build" help:"Build a base image with no dependencies."`
 	ConfigureCmd  DockerConfigureCmd `cmd:"" name:"configure" help:"Configure and save an image with all dependencies and environment baked in. Updates themes and precompiles all assets."`
 	MigrateCmd    DockerMigrateCmd   `cmd:"" name:"migrate" help:"Run migration tasks on an image."`
+	BootstrapCmd DockerBootstrapCmd `cmd:"" name:"bootstrap" help:"Build, migrate, and configure an image"`
 	Clean         CleanCmd           `cmd:"" name:"clean" help:"clean generated files for config"`
 }
 
