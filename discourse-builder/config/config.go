@@ -172,7 +172,7 @@ func (config *Config) WriteDockerCompose(dir string, bakeEnv bool) error {
 	compose := &DockerComposeYaml{
 		Services: ComposeAppService{
 			App: ComposeService{
-				Image: "local_discourse" + config.Name,
+				Image: "local_discourse/" + config.Name,
 				Build: ComposeBuild{
 					Dockerfile: "./Dockerfile",
 					Labels:     labels,

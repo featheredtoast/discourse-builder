@@ -70,5 +70,6 @@ var _ = Describe("Config", func() {
 		out, err = os.ReadFile(testDir + "/docker-compose.yaml")
 		Expect(err).To(BeNil())
 		Expect(string(out[:])).To(ContainSubstring("build:"))
+		Expect(string(out[:])).To(ContainSubstring("image: local_discourse/test"))
 	})
 })
