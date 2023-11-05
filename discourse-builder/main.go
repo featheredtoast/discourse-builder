@@ -160,14 +160,8 @@ func (r *DockerPupsCmd) Run(cli *Cli, ctx *context.Context) error {
 		}
 	}
 
-	if len(r.SavedImageName) > 0 {
-		cleaner := CleanCmd{Config: r.Config, CleanContainer: true}
-		cleaner.Run(cli)
-	} else {
-		cleaner := CleanCmd{Config: r.Config}
-		cleaner.Run(cli)
-	}
-
+	cleaner := CleanCmd{Config: r.Config}
+	cleaner.Run(cli)
 
 	return nil
 }
@@ -227,7 +221,6 @@ func (r *DockerComposeCmd) Run(cli *Cli, ctx *context.Context) error {
 
 type CleanCmd struct {
 	Config string `arg:"" name:"config" help:"config to clean"`
-	CleanContainer bool `help:"remove and clean build containers"`
 }
 
 func (r *CleanCmd) Run(cli *Cli) error {
@@ -236,16 +229,6 @@ func (r *CleanCmd) Run(cli *Cli) error {
 	os.Remove(dir + "/config.yaml")
 	os.Remove(dir + "/.envrc")
 	os.Remove(dir + "/" + "Dockerfile")
-
-	//clean up container
-	if(r.CleanContainer) {
-		runCtx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
-		defer cancel()
-		cmd := exec.CommandContext(runCtx, "docker", "rm", "-f", cli.ContainerId)
-		if err := CmdRunner(cmd).Run(); err != nil {
-			return err
-		}
-	}
 	if err := os.Remove(dir); err != nil {
 		return err
 	}
@@ -335,14 +318,20 @@ func main() {
 	signal.Notify(sigChan, unix.SIGINT)
 	done := make(chan struct{})
 	defer close(done)
-	go func() {
+	go func(containerId string) {
 		select {
 		case <-sigChan:
 			fmt.Fprintln(Out, "Command interrupted")
 			cancel()
 		case <-done:
 		}
-	}()
+
+		//clean up container
+		runCtx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
+		defer cancel()
+		cmd := exec.CommandContext(runCtx, "docker", "rm", "-f", containerId)
+		CmdRunner(cmd).Run()
+	}(cli.ContainerId)
 	err := ctx.Run()
 	if err == nil {
 		return
