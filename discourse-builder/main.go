@@ -98,7 +98,6 @@ func (r *DockerPupsCmd) Run(cli *Cli, ctx *context.Context) error {
 		return unix.Kill(-cmd.Process.Pid, unix.SIGINT)
 	}
 	cmd.Env = config.EnvArray()
-	cmd.Env = append(cmd.Env, "BUILDKIT_PROGRESS=plain")
 	for k, _ := range config.Env {
 		cmd.Args = append(cmd.Args, "-e")
 		cmd.Args = append(cmd.Args, k)

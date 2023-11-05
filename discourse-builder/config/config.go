@@ -220,6 +220,7 @@ func (config *Config) Dockerfile(pupsArgs string, bakeEnv bool) string {
 	if bakeEnv {
 		builder.WriteString(config.DockerfileEnvs() + "\n")
 	}
+	builder.WriteString(config.DockerfileExpose() + "\n")
 	builder.WriteString("COPY config.yaml /temp-config.yaml\n")
 	builder.WriteString("RUN " +
 		"cat /temp-config.yaml | /usr/local/bin/pups " + pupsArgs + " --stdin " +
@@ -292,6 +293,18 @@ func (config *Config) DockerfileArgs() string {
 	builder := strings.Builder{}
 	for k, _ := range config.Env {
 		builder.WriteString("ARG " + k + "\n")
+	}
+	return strings.TrimSpace(builder.String())
+}
+
+func (config *Config) DockerfileExpose() string {
+	builder := strings.Builder{}
+	for _, p := range config.Expose {
+		port := p
+		if strings.Contains(p, ":") {
+			_, port, _ = strings.Cut(p, ":")
+		}
+		builder.WriteString("EXPOSE " + port)
 	}
 	return strings.TrimSpace(builder.String())
 }

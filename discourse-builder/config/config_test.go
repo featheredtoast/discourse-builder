@@ -52,6 +52,7 @@ var _ = Describe("Config", func() {
 		out, err = os.ReadFile(testDir + "/Dockerfile")
 		Expect(err).To(BeNil())
 		Expect(string(out[:])).To(ContainSubstring("RUN cat /temp-config.yaml"))
+		Expect(string(out[:])).To(ContainSubstring("EXPOSE 80"))
 	})
 
 	It("can write a docker compose setup", func() {
