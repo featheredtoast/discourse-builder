@@ -29,6 +29,7 @@ type ComposeAppService struct {
 	App ComposeService
 }
 type ComposeService struct {
+	Image       string
 	Build       ComposeBuild
 	Volumes     []string
 	Links       []string
@@ -171,6 +172,7 @@ func (config *Config) WriteDockerCompose(dir string, bakeEnv bool) error {
 	compose := &DockerComposeYaml{
 		Services: ComposeAppService{
 			App: ComposeService{
+				Image: "local_discourse" + config.Name,
 				Build: ComposeBuild{
 					Dockerfile: "./Dockerfile",
 					Labels:     labels,
@@ -206,7 +208,7 @@ func (config *Config) WriteDockerfile(dir string, pupsArgs string, bakeEnv bool)
 		return err
 	}
 
-	file := strings.TrimRight(dir, "/")+"/"+"Dockerfile"
+	file := strings.TrimRight(dir, "/") + "/" + "Dockerfile"
 	if err := os.WriteFile(file, []byte(config.Dockerfile(pupsArgs, bakeEnv)), 0666); err != nil {
 		return errors.New("error writing dockerfile Dockerfile " + file)
 	}
@@ -230,7 +232,7 @@ func (config *Config) Dockerfile(pupsArgs string, bakeEnv bool) string {
 }
 
 func (config *Config) WriteYamlConfig(dir string) error {
-	file := strings.TrimRight(dir, "/")+"/config.yaml"
+	file := strings.TrimRight(dir, "/") + "/config.yaml"
 	if err := os.WriteFile(file, []byte(config.Yaml()), 0666); err != nil {
 		return errors.New("error writing config file " + file)
 	}
@@ -238,7 +240,7 @@ func (config *Config) WriteYamlConfig(dir string) error {
 }
 
 func (config *Config) WriteEnvConfig(dir string) error {
-	file := strings.TrimRight(dir, "/")+"/.envrc"
+	file := strings.TrimRight(dir, "/") + "/.envrc"
 	if err := os.WriteFile(file, []byte(config.ExportEnv()), 0666); err != nil {
 		return errors.New("error writing export env " + file)
 	}
