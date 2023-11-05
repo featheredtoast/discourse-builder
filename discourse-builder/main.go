@@ -322,7 +322,7 @@ type Cli struct {
 	BuildCmd      DockerBuildCmd     `cmd:"" name:"build" help:"Build a base image with no dependencies."`
 	ConfigureCmd  DockerConfigureCmd `cmd:"" name:"configure" help:"Configure and save an image with all dependencies and environment baked in. Updates themes and precompiles all assets."`
 	MigrateCmd    DockerMigrateCmd   `cmd:"" name:"migrate" help:"Run migration tasks on an image."`
-	BootstrapCmd DockerBootstrapCmd `cmd:"" name:"bootstrap" help:"Build, migrate, and configure an image"`
+	BootstrapCmd  DockerBootstrapCmd `cmd:"" name:"bootstrap" help:"Build, migrate, and configure an image"`
 	Clean         CleanCmd           `cmd:"" name:"clean" help:"clean generated files for config"`
 }
 
@@ -348,7 +348,7 @@ func main() {
 		}
 
 		//clean up container
-		runCtx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
+		runCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		cmd := exec.CommandContext(runCtx, "docker", "rm", "-f", containerId)
 		CmdRunner(cmd).Run()
