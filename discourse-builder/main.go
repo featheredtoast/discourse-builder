@@ -149,6 +149,8 @@ func (r *DockerPupsCmd) Run(cli *Cli, ctx *context.Context) error {
 			"commit",
 			"--change",
 			"LABEL org.opencontainers.image.created=\""+time.Now().Format(time.RFC3339)+"\"",
+			"--change",
+			"CMD "+config.BootCommand(),
 			cli.ContainerId,
 			"local_discourse/"+config.Name,
 		)
