@@ -308,7 +308,7 @@ func (config *Config) DockerArgsCli() string {
 	builder := strings.Builder{}
 	for k, v := range config.Env {
 		value := strings.ReplaceAll(v, "{{config}}", config.Name)
-		value = shellwords.Escape(v)
+		value = shellwords.Escape(value)
 		builder.WriteString(" --env " + k + "=" + value)
 	}
 	for _, l := range config.Links {
@@ -326,7 +326,7 @@ func (config *Config) DockerArgsCli() string {
 	}
 	for k, v := range config.Labels {
 		value := strings.ReplaceAll(v, "{{config}}", config.Name)
-		value = shellwords.Escape(v)
+		value = shellwords.Escape(value)
 		builder.WriteString(" --label " + k + "=" + value)
 	}
 	return strings.TrimSpace(builder.String())

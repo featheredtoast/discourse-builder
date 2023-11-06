@@ -72,4 +72,10 @@ var _ = Describe("Config", func() {
 		Expect(string(out[:])).To(ContainSubstring("build:"))
 		Expect(string(out[:])).To(ContainSubstring("image: local_discourse/test"))
 	})
+
+	It("parses docker args", func() {
+		Expect(conf.DockerArgsCli()).To(ContainSubstring("--expose 90"))
+		Expect(conf.DockerArgsCli()).To(ContainSubstring("--env MULTI=test'\n'multiline\\ with\\ some\\ spaces'\n'var'\n'"))
+		Expect(conf.DockerArgsCli()).To(ContainSubstring("--env REPLACED=test/test/test"))
+	})
 })
