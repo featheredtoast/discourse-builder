@@ -121,6 +121,17 @@ func LoadConfig(dir string, configName string, includeTemplates bool, templatesD
 	if err != nil {
 		return nil, err
 	}
+
+	for k, v := range config.Labels {
+		val := strings.ReplaceAll(v, "{{config}}", config.Name)
+		config.Labels[k] = val
+	}
+
+	for k, v := range config.Env {
+		val := strings.ReplaceAll(v, "{{config}}", config.Name)
+		config.Env[k] = val
+	}
+
 	return config, nil
 }
 
@@ -138,13 +149,11 @@ func (config *Config) WriteDockerCompose(dir string, bakeEnv bool) error {
 	}
 	labels := map[string]string{}
 	for k, v := range config.Labels {
-		val := strings.ReplaceAll(v, "{{config}}", config.Name)
-		labels[k] = val
+		labels[k] = v
 	}
 	env := map[string]string{}
 	for k, v := range config.Env {
-		val := strings.ReplaceAll(v, "{{config}}", config.Name)
-		env[k] = val
+		env[k] = v
 	}
 	env["CREATE_DB_ON_BOOT"] = "1"
 	env["MIGRATE_ON_BOOT"] = "1"
@@ -267,8 +276,7 @@ func (config *Config) BootCommand() string {
 func (config *Config) EnvArray() []string {
 	envs := []string{}
 	for k, v := range config.Env {
-		val := strings.ReplaceAll(v, "{{config}}", config.Name)
-		envs = append(envs, k+"="+val)
+		envs = append(envs, k+"="+v)
 	}
 	slices.Sort(envs)
 	return envs
@@ -277,8 +285,7 @@ func (config *Config) EnvArray() []string {
 func (config *Config) ExportEnv() string {
 	builder := []string{}
 	for k, v := range config.Env {
-		val := strings.ReplaceAll(v, "{{config}}", config.Name)
-		val = strings.ReplaceAll(val, "\\", "\\\\")
+		val := strings.ReplaceAll(v, "\\", "\\\\")
 		val = strings.ReplaceAll(val, "\"", "\\\"")
 		builder = append(builder, "export "+k+"=\""+val+"\"")
 	}
@@ -320,8 +327,7 @@ func (config *Config) DockerfileExpose() string {
 func (config *Config) DockerArgsCli(includePorts bool) string {
 	args := []string{}
 	for k, v := range config.Env {
-		value := strings.ReplaceAll(v, "{{config}}", config.Name)
-		value = shellwords.Escape(value)
+		value := shellwords.Escape(v)
 		args = append(args, "--env "+k+"="+value)
 	}
 	for _, l := range config.Links {
@@ -340,8 +346,7 @@ func (config *Config) DockerArgsCli(includePorts bool) string {
 		}
 	}
 	for k, v := range config.Labels {
-		value := strings.ReplaceAll(v, "{{config}}", config.Name)
-		value = shellwords.Escape(value)
+		value := shellwords.Escape(v)
 		args = append(args, "--label "+k+"="+value)
 	}
 	slices.Sort(args)

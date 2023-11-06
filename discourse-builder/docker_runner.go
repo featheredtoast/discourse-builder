@@ -78,7 +78,7 @@ func (r *DockerRunner) Run() error {
 	}
 	for k, v := range r.Config.Labels {
 		cmd.Args = append(cmd.Args, "--label")
-		cmd.Args = append(cmd.Args, k+"="+strings.ReplaceAll(v, "{{config}}", r.Config.Name))
+		cmd.Args = append(cmd.Args, k+"="+v)
 	}
 	for _, v := range r.Config.Expose {
 		if strings.Contains(v, ":") {
