@@ -130,7 +130,7 @@ var _ = Describe("Main", func() {
 		var checkMigrateCmd = func() {
 			cmd := getLastCommand()
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
-			Expect(cmd.Cmd.String()).To(ContainSubstring("-e DISCOURSE_DEVELOPER_EMAILS"))
+			Expect(cmd.Cmd.String()).To(ContainSubstring("--env DISCOURSE_DEVELOPER_EMAILS"))
 			// no commit after, we expect an --rm as the container isn't needed after it is stopped
 			Expect(cmd.Cmd.String()).To(ContainSubstring("--rm"))
 			Expect(cmd.Cmd.Env).To(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
@@ -143,7 +143,7 @@ var _ = Describe("Main", func() {
 		var checkConfigureCmd = func() {
 			cmd := getLastCommand()
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
-			Expect(cmd.Cmd.String()).To(ContainSubstring("-e DISCOURSE_DEVELOPER_EMAILS"))
+			Expect(cmd.Cmd.String()).To(ContainSubstring("--env DISCOURSE_DEVELOPER_EMAILS"))
 			// we commit, we need the container to stick around after it is stopped.
 			Expect(cmd.Cmd.String()).ToNot(ContainSubstring("--rm"))
 			Expect(cmd.Cmd.Env).To(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))

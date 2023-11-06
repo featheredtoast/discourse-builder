@@ -79,122 +79,47 @@ func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
 	return nil
 }
 
-type DockerPupsCmd struct {
-	Config         string `arg:"" name:"config" help:"configuration"`
-	PupsArgs       string `name:"pups-args" help:"Additional pups args to run with."`
-	SavedImageName string `short:"s" name:"saved-image" help:"Name of the resulting docker image. Image will only be committed if set."`
-	SkipEmber      bool   `name:"skip-ember" help:"Skip ember compile"`
+type DockerConfigureCmd struct {
+	Config string `arg:"" name:"config" help:"update a built image with assets and environment baked in for boot times."`
 }
 
-func (r *DockerPupsCmd) Run(cli *Cli, ctx *context.Context) error {
+func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
 	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
-
-	cmd := exec.CommandContext(*ctx, "docker", "run")
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	cmd.Cancel = func() error {
-		return unix.Kill(-cmd.Process.Pid, unix.SIGINT)
-	}
-	cmd.Env = config.EnvArray()
-	for k, _ := range config.Env {
-		cmd.Args = append(cmd.Args, "-e")
-		cmd.Args = append(cmd.Args, k)
-	}
-	if r.SkipEmber {
-		cmd.Args = append(cmd.Args, "-e")
-		cmd.Args = append(cmd.Args, "SKIP_EMBER_CLI_COMPILE=1")
-	}
-	for k, v := range config.Labels {
-		cmd.Args = append(cmd.Args, "--label")
-		cmd.Args = append(cmd.Args, k+"="+strings.ReplaceAll(v, "{{config}}", config.Name))
-	}
-	for _, v := range config.Expose {
-		if strings.Contains(v, ":") {
-			cmd.Args = append(cmd.Args, "-p")
-			cmd.Args = append(cmd.Args, v)
-		} else {
-			cmd.Args = append(cmd.Args, "--expose")
-			cmd.Args = append(cmd.Args, v)
-		}
-	}
-	for _, v := range config.Volumes {
-		cmd.Args = append(cmd.Args, "-v")
-		cmd.Args = append(cmd.Args, v.Volume.Host+":"+v.Volume.Guest)
-	}
-	for _, v := range config.Links {
-		cmd.Args = append(cmd.Args, "--link")
-		cmd.Args = append(cmd.Args, v.Link.Name+":"+v.Link.Alias)
-	}
-	cmd.Args = append(cmd.Args, "--shm-size=512m")
-	if len(r.SavedImageName) <= 0 {
-		cmd.Args = append(cmd.Args, "--rm")
-	}
-	cmd.Args = append(cmd.Args, "--name")
-	cmd.Args = append(cmd.Args, cli.ContainerId)
-	cmd.Args = append(cmd.Args, "-i")
-	cmd.Args = append(cmd.Args, "local_discourse/"+config.Name)
-	cmd.Args = append(cmd.Args, "/bin/bash")
-	cmd.Args = append(cmd.Args, "-c")
-	cmd.Args = append(cmd.Args, "/usr/local/bin/pups --stdin "+r.PupsArgs)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = strings.NewReader(config.Yaml())
-	if err := CmdRunner(cmd).Run(); err != nil {
-		return err
-	}
-	if len(r.SavedImageName) > 0 {
-		cmd := exec.Command("docker",
-			"commit",
-			"--change",
-			"LABEL org.opencontainers.image.created=\""+time.Now().Format(time.RFC3339)+"\"",
-			"--change",
-			"CMD "+config.BootCommand(),
-			cli.ContainerId,
-			"local_discourse/"+config.Name,
-		)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := CmdRunner(cmd).Run(); err != nil {
-			return err
-		}
-	}
-
-	cleaner := CleanCmd{Config: r.Config}
-	cleaner.Run(cli)
-
-	return nil
-}
-
-type DockerConfigureCmd struct {
-	Config string `arg:"" name:"config" help:"configuration"`
-}
-
-func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
-	pups := DockerPupsCmd{
-		Config:         r.Config,
+	pups := DockerPupsRunner{
+		Config:         config,
 		PupsArgs:       "--tags=db,precompile",
 		SavedImageName: "local_discourse/" + r.Config,
+		SkipEmber:      true,
+		Ctx:            ctx,
+		ContainerId:    cli.ContainerId,
 	}
-	return pups.Run(cli, ctx)
+	return pups.Run()
 }
 
 type DockerMigrateCmd struct {
-	Config string `arg:"" name:"config" help:"configuration"`
+	Config string `arg:"" name:"config" help:"run database migrations for image"`
 }
 
 func (r *DockerMigrateCmd) Run(cli *Cli, ctx *context.Context) error {
-	pups := DockerPupsCmd{
-		Config:    r.Config,
+	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
+	if err != nil {
+		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
+	}
+	pups := DockerPupsRunner{
+		Config:    config,
 		PupsArgs:  "--tags=db,migrate",
 		SkipEmber: true,
+		Ctx:            ctx,
+		ContainerId:    cli.ContainerId,
 	}
-	return pups.Run(cli, ctx)
+	return pups.Run()
 }
 
 type DockerBootstrapCmd struct {
-	Config string `arg:"" name:"config" help:"configuration"`
+	Config string `arg:"" name:"config" help:"bootstrap full image: build, migrate, configure"`
 }
 
 func (r *DockerBootstrapCmd) Run(cli *Cli, ctx *context.Context) error {
@@ -270,9 +195,9 @@ func (r *RawYamlCmd) Run(cli *Cli) error {
 }
 
 type GenDockerRunArgsCmd struct {
-	Config string `arg:"" name:"config" help:"configuration"`
-	Type string `default:"args" enum:"args,run-image,boot-command,hostname" help:"the type of run arg - args, run-image, boot-command, hostname"`
-	IncludePorts bool `default:"true" name:"include-ports" negatable:"" help:"include ports in run args"`
+	Config       string `arg:"" name:"config" help:"configuration"`
+	Type         string `default:"args" enum:"args,run-image,boot-command,hostname" help:"the type of run arg - args, run-image, boot-command, hostname"`
+	IncludePorts bool   `default:"true" name:"include-ports" negatable:"" help:"include ports in run args"`
 }
 
 func (r *GenDockerRunArgsCmd) Run(cli *Cli) error {
