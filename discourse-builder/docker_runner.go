@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/discourse/discourse_docker/discourse-builder/config"
+	"github.com/discourse/discourse_docker/discourse-builder/utils"
 	"golang.org/x/sys/unix"
 	"io"
 	"os"
@@ -36,7 +37,7 @@ func (r *DockerBuilder) Run() error {
 	cmd.Args = append(cmd.Args, "--pull")
 	cmd.Args = append(cmd.Args, "--force-rm")
 	cmd.Args = append(cmd.Args, "-t")
-	cmd.Args = append(cmd.Args, "local_discourse/"+r.Config.Name)
+	cmd.Args = append(cmd.Args, utils.BaseImageName+r.Config.Name)
 	cmd.Args = append(cmd.Args, "--shm-size=512m")
 	cmd.Args = append(cmd.Args, "-f")
 	cmd.Args = append(cmd.Args, "-")
@@ -103,7 +104,7 @@ func (r *DockerRunner) Run() error {
 	cmd.Args = append(cmd.Args, "--name")
 	cmd.Args = append(cmd.Args, r.ContainerId)
 	cmd.Args = append(cmd.Args, "-i")
-	cmd.Args = append(cmd.Args, "local_discourse/"+r.Config.Name)
+	cmd.Args = append(cmd.Args, utils.BaseImageName+r.Config.Name)
 
 	for _, c := range r.Cmd {
 		cmd.Args = append(cmd.Args, c)
@@ -161,7 +162,7 @@ func (r *DockerPupsRunner) Run() error {
 			"--change",
 			"CMD "+r.Config.BootCommand(),
 			r.ContainerId,
-			"local_discourse/"+r.Config.Name,
+			utils.BaseImageName+r.Config.Name,
 		)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr

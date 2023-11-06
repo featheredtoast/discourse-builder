@@ -5,6 +5,7 @@ import (
 	"dario.cat/mergo"
 	"errors"
 	"github.com/Wing924/shellwords"
+	"github.com/discourse/discourse_docker/discourse-builder/utils"
 	"os"
 	"regexp"
 	"runtime"
@@ -178,7 +179,7 @@ func (config *Config) WriteDockerCompose(dir string, bakeEnv bool) error {
 	compose := &DockerComposeYaml{
 		Services: ComposeAppService{
 			App: ComposeService{
-				Image: "local_discourse/" + config.Name,
+				Image: utils.BaseImageName + config.Name,
 				Build: ComposeBuild{
 					Dockerfile: "./Dockerfile",
 					Labels:     labels,
@@ -351,7 +352,7 @@ func (config *Config) RunImageCli() string {
 	if len(config.Run_Image) > 0 {
 		return config.Run_Image
 	}
-	return "local_discourse/" + config.Name
+	return utils.BaseImageName + config.Name
 }
 
 func (config *Config) DockerHostnameCli() string {
