@@ -25,7 +25,7 @@ links:
       alias: data
 
 # any extra arguments for Docker?
-# docker_args:
+docker_args: "--expose 100"
 
 params:
   ## Which Git revision should this container use? (default: tests-passed)
