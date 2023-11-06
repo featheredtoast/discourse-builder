@@ -16,6 +16,7 @@ templates:
 expose:
   - "80:80"   # http
   - "443:443" # https
+  - 90
 
 # Use 'links' key to link containers together, aka use Docker --link flag.
 links:
@@ -35,6 +36,10 @@ env:
   LANG: en_US.UTF-8
   LANGUAGE: en_US.UTF-8
   # DISCOURSE_DEFAULT_LOCALE: en
+  MULTI: |
+    test
+    multiline with some spaces
+    var
 
   ## How many concurrent web requests are supported? Depends on memory and CPU cores.
   ## will be set automatically by bootstrap based on detected CPUs, or you can override

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"dario.cat/mergo"
 	"errors"
+	"github.com/Wing924/shellwords"
 	"os"
 	"regexp"
 	"runtime"
@@ -255,14 +256,6 @@ func (config *Config) BootCommand() string {
 	}
 }
 
-func (config *Config) EnvCli() string {
-	builder := strings.Builder{}
-	for k, _ := range config.Env {
-		builder.WriteString(k + "\n")
-	}
-	return strings.TrimSpace(builder.String())
-}
-
 func (config *Config) EnvArray() []string {
 	envs := []string{}
 	for k, v := range config.Env {
@@ -311,16 +304,19 @@ func (config *Config) DockerfileExpose() string {
 	return strings.TrimSpace(builder.String())
 }
 
-func (config *Config) LabelsCli() string {
+// args for docker run.
+func (config *Config) DockerArgsCli() string {
 	builder := strings.Builder{}
-	for k, v := range config.Labels {
-		builder.WriteString(" --label " + k + "=" + strings.ReplaceAll(v, "{{config}}", config.Name))
+	for k, v := range config.Env {
+		value := shellwords.Escape(v)
+		builder.WriteString(" --env " + k + "=" + value)
 	}
-	return strings.TrimSpace(builder.String())
-}
-
-func (config *Config) PortsCli() string {
-	builder := strings.Builder{}
+	for _, l := range config.Links {
+		builder.WriteString(" --link " + l.Link.Name + ":" + l.Link.Alias)
+	}
+	for _, v := range config.Volumes {
+		builder.WriteString(" -v " + v.Volume.Host + ":" + v.Volume.Guest)
+	}
 	for _, p := range config.Expose {
 		if strings.Contains(p, ":") {
 			builder.WriteString(" -p " + p)
@@ -328,21 +324,10 @@ func (config *Config) PortsCli() string {
 			builder.WriteString(" --expose " + p)
 		}
 	}
-	return strings.TrimSpace(builder.String())
-}
-
-func (config *Config) VolumesCli() string {
-	builder := strings.Builder{}
-	for _, v := range config.Volumes {
-		builder.WriteString(" -v " + v.Volume.Host + ":" + v.Volume.Guest)
-	}
-	return strings.TrimSpace(builder.String())
-}
-
-func (config *Config) LinksCli() string {
-	builder := strings.Builder{}
-	for _, l := range config.Links {
-		builder.WriteString(" --link " + l.Link.Name + ":" + l.Link.Alias)
+	for k, v := range config.Labels {
+		value := strings.ReplaceAll(v, "{{config}}", config.Name)
+		value = shellwords.Escape(v)
+		builder.WriteString(" --label " + k + "=" + value)
 	}
 	return strings.TrimSpace(builder.String())
 }
