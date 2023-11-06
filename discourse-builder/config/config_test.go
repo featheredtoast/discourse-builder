@@ -74,9 +74,12 @@ var _ = Describe("Config", func() {
 	})
 
 	It("parses docker args", func() {
-		Expect(conf.DockerArgsCli()).To(ContainSubstring("--expose 90"))
-		Expect(conf.DockerArgsCli()).To(ContainSubstring("--env MULTI=test'\n'multiline\\ with\\ some\\ spaces'\n'var'\n'"))
-		Expect(conf.DockerArgsCli()).To(ContainSubstring("--env REPLACED=test/test/test"))
-		Expect(conf.DockerArgsCli()).To(ContainSubstring("--expose 100"))
+		Expect(conf.DockerArgsCli(true)).To(ContainSubstring("--expose 90"))
+		Expect(conf.DockerArgsCli(true)).To(ContainSubstring("--env MULTI=test'\n'multiline\\ with\\ some\\ spaces'\n'var'\n'"))
+		Expect(conf.DockerArgsCli(true)).To(ContainSubstring("--env REPLACED=test/test/test"))
+		Expect(conf.DockerArgsCli(true)).To(ContainSubstring("--expose 100"))
+
+		// ports can be omitted
+		Expect(conf.DockerArgsCli(false)).ToNot(ContainSubstring("--expose 90"))
 	})
 })

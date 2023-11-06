@@ -272,6 +272,7 @@ func (r *RawYamlCmd) Run(cli *Cli) error {
 type GenDockerRunArgsCmd struct {
 	Config string `arg:"" name:"config" help:"configuration"`
 	Type string `default:"args" enum:"args,run-image,boot-command,hostname" help:"the type of run arg - args, run-image, boot-command, hostname"`
+	IncludePorts bool `default:"true" help:"include ports in run args"`
 }
 
 func (r *GenDockerRunArgsCmd) Run(cli *Cli) error {
@@ -281,7 +282,7 @@ func (r *GenDockerRunArgsCmd) Run(cli *Cli) error {
 	}
 	switch r.Type {
 	case "args":
-		fmt.Fprint(Out, config.DockerArgsCli())
+		fmt.Fprint(Out, config.DockerArgsCli(r.IncludePorts))
 	case "run-image":
 		fmt.Fprint(Out, config.RunImageCli())
 	case "boot-command":

@@ -316,7 +316,7 @@ func (config *Config) DockerfileExpose() string {
 	return strings.Join(builder, "\n")
 }
 
-func (config *Config) DockerArgsCli() string {
+func (config *Config) DockerArgsCli(includePorts bool) string {
 	args := []string{}
 	for k, v := range config.Env {
 		value := strings.ReplaceAll(v, "{{config}}", config.Name)
@@ -329,11 +329,13 @@ func (config *Config) DockerArgsCli() string {
 	for _, v := range config.Volumes {
 		args = append(args, "-v "+v.Volume.Host+":"+v.Volume.Guest)
 	}
-	for _, p := range config.Expose {
-		if strings.Contains(p, ":") {
-			args = append(args, "-p "+p)
-		} else {
-			args = append(args, "--expose "+p)
+	if includePorts {
+		for _, p := range config.Expose {
+			if strings.Contains(p, ":") {
+				args = append(args, "-p "+p)
+			} else {
+				args = append(args, "--expose "+p)
+			}
 		}
 	}
 	for k, v := range config.Labels {
