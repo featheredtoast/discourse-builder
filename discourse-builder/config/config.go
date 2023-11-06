@@ -254,10 +254,12 @@ func (config *Config) WriteEnvConfig(dir string) error {
 }
 
 func (config *Config) BootCommand() string {
-	if config.Boot_Command != "" && config.No_Boot_Command {
-		return "/sbin/boot"
-	} else {
+	if len(config.Boot_Command) > 0 {
 		return config.Boot_Command
+	} else if config.No_Boot_Command {
+		return ""
+	} else {
+		return "/sbin/boot"
 	}
 }
 
