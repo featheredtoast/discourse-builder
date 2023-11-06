@@ -271,6 +271,7 @@ func (r *RawYamlCmd) Run(cli *Cli) error {
 
 type GenDockerRunArgsCmd struct {
 	Config string `arg:"" name:"config" help:"configuration"`
+	Type string `default:"args" enum:"args,run-image,boot-command,hostname" help:"the type of run arg - args, run-image, boot-command, hostname"`
 }
 
 func (r *GenDockerRunArgsCmd) Run(cli *Cli) error {
@@ -278,7 +279,18 @@ func (r *GenDockerRunArgsCmd) Run(cli *Cli) error {
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
-	fmt.Fprint(Out, config.DockerArgsCli())
+	switch r.Type {
+	case "args":
+		fmt.Fprint(Out, config.DockerArgsCli())
+	case "run-image":
+		fmt.Fprint(Out, config.RunImageCli())
+	case "boot-command":
+		fmt.Fprint(Out, config.BootCommand())
+	case "hostname":
+		fmt.Fprint(Out, config.DockerHostnameCli())
+	default:
+		return errors.New("unknown docker args type")
+	}
 	return nil
 }
 

@@ -342,3 +342,18 @@ func (config *Config) DockerArgsCli() string {
 	slices.Sort(args)
 	return strings.TrimSpace(strings.Join(args, " ") + " " + config.Docker_Args)
 }
+
+func (config *Config) RunImageCli() string {
+	if len(config.Run_Image) > 0 {
+		return config.Run_Image
+	}
+	return "local_discourse/" + config.Name
+}
+
+func (config *Config) DockerHostnameCli() string {
+	_, exists := config.Env["DOCKER_USE_HOSTNAME"]
+	if exists {
+		return config.Env["DISCOURSE_HOSTNAME"]
+	}
+	return ""
+}
