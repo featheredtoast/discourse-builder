@@ -8,6 +8,7 @@ import (
 	"os"
 	"regexp"
 	"runtime"
+	"slices"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -262,72 +263,78 @@ func (config *Config) EnvArray() []string {
 		val := strings.ReplaceAll(v, "{{config}}", config.Name)
 		envs = append(envs, k+"="+val)
 	}
+	slices.Sort(envs)
 	return envs
 }
 
 func (config *Config) ExportEnv() string {
-	builder := strings.Builder{}
+	builder := []string{}
 	for k, v := range config.Env {
 		val := strings.ReplaceAll(v, "{{config}}", config.Name)
 		val = strings.ReplaceAll(val, "\\", "\\\\")
 		val = strings.ReplaceAll(val, "\"", "\\\"")
-		builder.WriteString("export " + k + "=\"" + val + "\"\n")
+		builder = append(builder, "export " + k + "=\"" + val + "\"")
 	}
-	return strings.TrimSpace(builder.String())
+	slices.Sort(builder)
+	return strings.Join(builder, "\n")
 }
 
 func (config *Config) DockerfileEnvs() string {
-	builder := strings.Builder{}
+	builder := []string{}
 	for k, _ := range config.Env {
-		builder.WriteString("ENV " + k + "=${" + k + "}\n")
+		builder = append(builder, "ENV " + k + "=${" + k + "}")
 	}
-	return strings.TrimSpace(builder.String())
+	slices.Sort(builder)
+	return strings.Join(builder, "\n")
 }
 
 func (config *Config) DockerfileArgs() string {
-	builder := strings.Builder{}
+	builder := []string{}
 	for k, _ := range config.Env {
-		builder.WriteString("ARG " + k + "\n")
+		builder = append(builder, "ARG " + k)
 	}
-	return strings.TrimSpace(builder.String())
+	slices.Sort(builder)
+	return strings.Join(builder, "\n")
 }
 
 func (config *Config) DockerfileExpose() string {
-	builder := strings.Builder{}
+	builder := []string{}
 	for _, p := range config.Expose {
 		port := p
 		if strings.Contains(p, ":") {
 			_, port, _ = strings.Cut(p, ":")
 		}
-		builder.WriteString("EXPOSE " + port)
+		builder = append(builder, "EXPOSE " + port)
 	}
-	return strings.TrimSpace(builder.String())
+	slices.Sort(builder)
+	return strings.Join(builder, "\n")
 }
 
 func (config *Config) DockerArgsCli() string {
-	builder := strings.Builder{}
+	args := []string{}
 	for k, v := range config.Env {
 		value := strings.ReplaceAll(v, "{{config}}", config.Name)
 		value = shellwords.Escape(value)
-		builder.WriteString(" --env " + k + "=" + value)
+		args = append(args, "--env "+k+"="+value)
 	}
 	for _, l := range config.Links {
-		builder.WriteString(" --link " + l.Link.Name + ":" + l.Link.Alias)
+		args = append(args, "--link "+l.Link.Name+":"+l.Link.Alias)
 	}
 	for _, v := range config.Volumes {
-		builder.WriteString(" -v " + v.Volume.Host + ":" + v.Volume.Guest)
+		args = append(args, "-v "+v.Volume.Host+":"+v.Volume.Guest)
 	}
 	for _, p := range config.Expose {
 		if strings.Contains(p, ":") {
-			builder.WriteString(" -p " + p)
+			args = append(args, "-p "+p)
 		} else {
-			builder.WriteString(" --expose " + p)
+			args = append(args, "--expose "+p)
 		}
 	}
 	for k, v := range config.Labels {
 		value := strings.ReplaceAll(v, "{{config}}", config.Name)
 		value = shellwords.Escape(value)
-		builder.WriteString(" --label " + k + "=" + value)
+		args = append(args, "--label "+k+"="+value)
 	}
-	return strings.TrimSpace(builder.String())
+	slices.Sort(args)
+	return strings.Join(args, " ")
 }
