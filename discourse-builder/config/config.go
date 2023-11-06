@@ -152,6 +152,7 @@ func (config *Config) WriteDockerCompose(dir string, bakeEnv bool) error {
 	for _, v := range config.Links {
 		links = append(links, v.Link.Name+":"+v.Link.Alias)
 	}
+	slices.Sort(links)
 	volumes := []string{}
 	composeVolumes := map[string]*interface{}{}
 	for _, v := range config.Volumes {
@@ -162,15 +163,18 @@ func (config *Config) WriteDockerCompose(dir string, bakeEnv bool) error {
 			composeVolumes[v.Volume.Host] = nil
 		}
 	}
+	slices.Sort(volumes)
 	ports := []string{}
 	for _, v := range config.Expose {
 		ports = append(ports, v)
 	}
+	slices.Sort(ports)
 
 	args := []string{}
 	for k, _ := range config.Env {
 		args = append(args, k)
 	}
+	slices.Sort(args)
 	compose := &DockerComposeYaml{
 		Services: ComposeAppService{
 			App: ComposeService{
