@@ -304,7 +304,6 @@ func (config *Config) DockerfileExpose() string {
 	return strings.TrimSpace(builder.String())
 }
 
-// args for docker run.
 func (config *Config) DockerArgsCli() string {
 	builder := strings.Builder{}
 	for k, v := range config.Env {
