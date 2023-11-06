@@ -277,7 +277,7 @@ func (config *Config) ExportEnv() string {
 		val := strings.ReplaceAll(v, "{{config}}", config.Name)
 		val = strings.ReplaceAll(val, "\\", "\\\\")
 		val = strings.ReplaceAll(val, "\"", "\\\"")
-		builder = append(builder, "export " + k + "=\"" + val + "\"")
+		builder = append(builder, "export "+k+"=\""+val+"\"")
 	}
 	slices.Sort(builder)
 	return strings.Join(builder, "\n")
@@ -286,7 +286,7 @@ func (config *Config) ExportEnv() string {
 func (config *Config) DockerfileEnvs() string {
 	builder := []string{}
 	for k, _ := range config.Env {
-		builder = append(builder, "ENV " + k + "=${" + k + "}")
+		builder = append(builder, "ENV "+k+"=${"+k+"}")
 	}
 	slices.Sort(builder)
 	return strings.Join(builder, "\n")
@@ -295,7 +295,7 @@ func (config *Config) DockerfileEnvs() string {
 func (config *Config) DockerfileArgs() string {
 	builder := []string{}
 	for k, _ := range config.Env {
-		builder = append(builder, "ARG " + k)
+		builder = append(builder, "ARG "+k)
 	}
 	slices.Sort(builder)
 	return strings.Join(builder, "\n")
@@ -308,7 +308,7 @@ func (config *Config) DockerfileExpose() string {
 		if strings.Contains(p, ":") {
 			_, port, _ = strings.Cut(p, ":")
 		}
-		builder = append(builder, "EXPOSE " + port)
+		builder = append(builder, "EXPOSE "+port)
 	}
 	slices.Sort(builder)
 	return strings.Join(builder, "\n")
@@ -340,5 +340,5 @@ func (config *Config) DockerArgsCli() string {
 		args = append(args, "--label "+k+"="+value)
 	}
 	slices.Sort(args)
-	return strings.Join(args, " ")
+	return strings.TrimSpace(strings.Join(args, " ") + " " + config.Docker_Args)
 }
