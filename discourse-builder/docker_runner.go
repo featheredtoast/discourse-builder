@@ -12,6 +12,44 @@ import (
 	"time"
 )
 
+type DockerBuilder struct {
+	Config *config.Config
+	Ctx    *context.Context
+	Stdin  io.Reader
+	Dir    string
+}
+
+func (r *DockerBuilder) Run() error {
+	cmd := exec.CommandContext(*r.Ctx, "docker", "build")
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.Cancel = func() error {
+		return unix.Kill(-cmd.Process.Pid, unix.SIGINT)
+	}
+	cmd.Dir = r.Dir
+	cmd.Env = r.Config.EnvArray()
+	cmd.Env = append(cmd.Env, "BUILDKIT_PROGRESS=plain")
+	for k, _ := range r.Config.Env {
+		cmd.Args = append(cmd.Args, "--build-arg")
+		cmd.Args = append(cmd.Args, k)
+	}
+	cmd.Args = append(cmd.Args, "--no-cache")
+	cmd.Args = append(cmd.Args, "--pull")
+	cmd.Args = append(cmd.Args, "--force-rm")
+	cmd.Args = append(cmd.Args, "-t")
+	cmd.Args = append(cmd.Args, "local_discourse/"+r.Config.Name)
+	cmd.Args = append(cmd.Args, "--shm-size=512m")
+	cmd.Args = append(cmd.Args, "-f")
+	cmd.Args = append(cmd.Args, "-")
+	cmd.Args = append(cmd.Args, ".")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = r.Stdin
+	if err := CmdRunner(cmd).Run(); err != nil {
+		return err
+	}
+	return nil
+}
+
 type DockerRunner struct {
 	Config      *config.Config
 	Ctx         *context.Context
@@ -86,7 +124,7 @@ type DockerPupsRunner struct {
 	SavedImageName string
 	SkipEmber      bool
 	Ctx            *context.Context
-	ContainerId string
+	ContainerId    string
 }
 
 func (r *DockerPupsRunner) Run() error {

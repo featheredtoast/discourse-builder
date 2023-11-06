@@ -13,7 +13,6 @@ import (
 	"os/exec"
 	"os/signal"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -45,32 +44,14 @@ func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
 		return err
 	}
 
-	cmd := exec.CommandContext(*ctx, "docker", "build")
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	cmd.Cancel = func() error {
-		return unix.Kill(-cmd.Process.Pid, unix.SIGINT)
-	}
-	cmd.Dir = dir
-	cmd.Env = config.EnvArray()
-	cmd.Env = append(cmd.Env, "BUILDKIT_PROGRESS=plain")
-	for k, _ := range config.Env {
-		cmd.Args = append(cmd.Args, "--build-arg")
-		cmd.Args = append(cmd.Args, k)
-	}
-	cmd.Args = append(cmd.Args, "--no-cache")
-	cmd.Args = append(cmd.Args, "--pull")
-	cmd.Args = append(cmd.Args, "--force-rm")
-	cmd.Args = append(cmd.Args, "-t")
-	cmd.Args = append(cmd.Args, "local_discourse/"+config.Name)
-	cmd.Args = append(cmd.Args, "--shm-size=512m")
-	cmd.Args = append(cmd.Args, "-f")
-	cmd.Args = append(cmd.Args, "-")
-	cmd.Args = append(cmd.Args, ".")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 	pupsArgs := "--skip-tags=precompile,migrate,db"
-	cmd.Stdin = strings.NewReader(config.Dockerfile(pupsArgs, r.BakeEnv))
-	if err := CmdRunner(cmd).Run(); err != nil {
+	builder := DockerBuilder{
+		Config: config,
+		Ctx: ctx,
+		Stdin: strings.NewReader(config.Dockerfile(pupsArgs, r.BakeEnv)),
+		Dir: dir,
+	}
+	if err := builder.Run(); err != nil {
 		return err
 	}
 	cleaner := CleanCmd{Config: r.Config}
