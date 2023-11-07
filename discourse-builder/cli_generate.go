@@ -35,7 +35,7 @@ func (r *RawYamlCmd) Run(cli *Cli) error {
 
 
 type DockerComposeCmd struct {
-	BakeEnv bool `short:"e" help:"Bake in the configured environment to image after build."`
+	OutputDir string `name:"output dir" default:"./compose" short:"o" help:"output dir for the environment"`
 
 	Config string `arg:"" name:"config" help:"config"`
 }
@@ -45,7 +45,7 @@ func (r *DockerComposeCmd) Run(cli *Cli, ctx *context.Context) error {
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
-	dir := cli.OutputDir + "/" + r.Config
+	dir := r.OutputDir + "/" + r.Config
 	if cli.ForceMkdir {
 		if err := os.MkdirAll(dir, 0755); err != nil && !os.IsExist(err) {
 			return err
@@ -55,7 +55,7 @@ func (r *DockerComposeCmd) Run(cli *Cli, ctx *context.Context) error {
 			return err
 		}
 	}
-	if err := config.WriteDockerCompose(dir, r.BakeEnv); err != nil {
+	if err := config.WriteDockerCompose(dir, false); err != nil {
 		return err
 	}
 	return nil

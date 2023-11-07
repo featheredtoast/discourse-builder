@@ -28,7 +28,7 @@ func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
 
-	dir := cli.OutputDir + "/" + r.Config
+	dir := cli.BuildDir + "/" + r.Config
 	if cli.ForceMkdir {
 		if err := os.MkdirAll(dir, 0755); err != nil && !os.IsExist(err) {
 			return err
@@ -122,7 +122,7 @@ type CleanCmd struct {
 }
 
 func (r *CleanCmd) Run(cli *Cli) error {
-	dir := cli.OutputDir + "/" + r.Config
+	dir := cli.BuildDir + "/" + r.Config
 	os.Remove(dir + "/docker-compose.yaml")
 	os.Remove(dir + "/config.yaml")
 	os.Remove(dir + "/.envrc")

@@ -17,10 +17,9 @@ var Out io.Writer = os.Stdout
 // TODO file permissions on output probably better set 640
 // TODO dry run start output now needs to be substituted with env so it can be run outside? right now env is --env ENV rather than --env ENV=VAL
 type Cli struct {
-	ConfDir      string `short:"c" default:"./containers" help:"pups config directory"`
-	TemplatesDir string `short:"t" default:"." help:"parent directory containing a templates/ directory with pups yaml templates"`
-	// TODO: how do we handle output dir? we have a temp dir and output dir -- tmp for running and building stuff, output for generate files
-	OutputDir    string             `short:"o" default:"./tmp" help:"parent output folder"`
+	ConfDir      string             `short:"c" default:"./containers" help:"pups config directory"`
+	TemplatesDir string             `short:"t" default:"." help:"parent directory containing a templates/ directory with pups yaml templates"`
+	BuildDir     string             `default:"./tmp" help:"build folder"`
 	ContainerId  string             `hidden:"" optional:""`
 	ForceMkdir   bool               `short:"p" name:"parent-dirs" help:"Create intermediate output directories as required.  If this option is not specified, the full path prefix of each operand must already exist."`
 	CliGenerate  CliGenerate        `cmd:"" name:"generate" help:"generate commands"`

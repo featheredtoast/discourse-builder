@@ -56,8 +56,8 @@ var _ = Describe("Main", func() {
 		cli = &ddocker.Cli{
 			ConfDir:      "./test/containers",
 			TemplatesDir: "./test",
-			OutputDir:    testDir,
-			ContainerId: "discourse-build-asdf",
+			BuildDir:     testDir,
+			ContainerId:  "discourse-build-asdf",
 		}
 	})
 	AfterEach(func() {
@@ -73,7 +73,8 @@ var _ = Describe("Main", func() {
 	})
 
 	It("should output docker compose cmd to config name's subdir", func() {
-		runner := ddocker.DockerComposeCmd{Config: "test"}
+		runner := ddocker.DockerComposeCmd{Config: "test",
+			OutputDir: testDir}
 		err := runner.Run(cli, &ctx)
 		Expect(err).To(BeNil())
 		out, err := os.ReadFile(testDir + "/test/config.yaml")
@@ -82,8 +83,8 @@ var _ = Describe("Main", func() {
 	})
 
 	It("does not create output parent folders when not asked", func() {
-		runner := ddocker.DockerComposeCmd{Config: "test"}
-		cli.OutputDir = testDir + "/subfolder/sub-subfolder"
+		runner := ddocker.DockerComposeCmd{Config: "test",
+			OutputDir: testDir + "/subfolder/sub-subfolder"}
 		err := runner.Run(cli, &ctx)
 		Expect(err).ToNot(BeNil())
 		_, err = os.ReadFile(testDir + "/subfolder/sub-subfolder/test/config.yaml")
@@ -91,9 +92,9 @@ var _ = Describe("Main", func() {
 	})
 
 	It("should force create output parent folders when asked", func() {
-		runner := ddocker.DockerComposeCmd{Config: "test"}
+		runner := ddocker.DockerComposeCmd{Config: "test",
+			OutputDir: testDir + "/subfolder/sub-subfolder"}
 		cli.ForceMkdir = true
-		cli.OutputDir = testDir + "/subfolder/sub-subfolder"
 		err := runner.Run(cli, &ctx)
 		Expect(err).To(BeNil())
 		out, err := os.ReadFile(testDir + "/subfolder/sub-subfolder/test/config.yaml")
@@ -102,7 +103,8 @@ var _ = Describe("Main", func() {
 	})
 
 	It("should clean after the command", func() {
-		runner := ddocker.DockerComposeCmd{Config: "test"}
+		runner := ddocker.DockerComposeCmd{Config: "test",
+			OutputDir: testDir}
 		runner.Run(cli, &ctx)
 		runner2 := ddocker.CleanCmd{Config: "test"}
 		err := runner2.Run(cli)
