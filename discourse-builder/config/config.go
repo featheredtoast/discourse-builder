@@ -356,17 +356,20 @@ func (config *Config) DockerArgsCli(includePorts bool) string {
 	return strings.TrimSpace(strings.Join(args, " ") + " " + config.Docker_Args)
 }
 
-func (config *Config) RunImageCli() string {
+func (config *Config) RunImage() string {
 	if len(config.Run_Image) > 0 {
 		return config.Run_Image
 	}
 	return utils.BaseImageName + config.Name
 }
 
-func (config *Config) DockerHostnameCli() string {
+func (config *Config) DockerHostname() string {
 	_, exists := config.Env["DOCKER_USE_HOSTNAME"]
 	if exists {
-		return config.Env["DISCOURSE_HOSTNAME"]
+		re := regexp.MustCompile(`[^a-zA-Z-]`)
+		hostname := config.Env["DISCOURSE_HOSTNAME"]
+		hostname = string(re.ReplaceAll([]byte(hostname), []byte("-"))[:])
+		return hostname
 	}
 	return ""
 }

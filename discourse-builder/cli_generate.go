@@ -55,11 +55,11 @@ func (r *DockerArgsCmd) Run(cli *Cli) error {
 	case "args":
 		fmt.Fprint(Out, config.DockerArgsCli(r.IncludePorts))
 	case "run-image":
-		fmt.Fprint(Out, config.RunImageCli())
+		fmt.Fprint(Out, config.RunImage())
 	case "boot-command":
 		fmt.Fprint(Out, config.BootCommand())
 	case "hostname":
-		fmt.Fprint(Out, config.DockerHostnameCli())
+		fmt.Fprint(Out, config.DockerHostname())
 	default:
 		return errors.New("unknown docker args type")
 	}

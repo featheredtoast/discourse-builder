@@ -55,18 +55,28 @@ type DockerRunner struct {
 	Config      *config.Config
 	Ctx         *context.Context
 	ExtraEnv    []string
+	ExtraArgs   string
 	Rm          bool
 	ContainerId string
+	CustomImage string
 	Cmd         []string
 	Stdin       io.Reader
 	SkipPorts   bool
+	DryRun      bool
+	Restart     bool
+	Detatch     bool
+	Hostname    string
 }
 
 func (r *DockerRunner) Run() error {
 	cmd := exec.CommandContext(*r.Ctx, "docker", "run")
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	cmd.Cancel = func() error {
-		return unix.Kill(-cmd.Process.Pid, unix.SIGINT)
+
+	// Detatch signifies we do not want to supervise
+	if !r.Detatch {
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		cmd.Cancel = func() error {
+			return unix.Kill(-cmd.Process.Pid, unix.SIGINT)
+		}
 	}
 	cmd.Env = r.Config.EnvArray(true)
 	for k, _ := range r.Config.Env {
@@ -104,20 +114,41 @@ func (r *DockerRunner) Run() error {
 	if r.Rm {
 		cmd.Args = append(cmd.Args, "--rm")
 	}
+	if r.Restart {
+		cmd.Args = append(cmd.Args, "--restart=always")
+	} else {
+		cmd.Args = append(cmd.Args, "--restart=no")
+	}
+	if r.Detatch {
+		cmd.Args = append(cmd.Args, "-d")
+	} else {
+		cmd.Args = append(cmd.Args, "-i")
+	}
+	cmd.Args = append(cmd.Args, r.Config.Docker_Args)
+	cmd.Args = append(cmd.Args, r.ExtraArgs)
+	cmd.Args = append(cmd.Args, r.Hostname)
 	cmd.Args = append(cmd.Args, "--name")
 	cmd.Args = append(cmd.Args, r.ContainerId)
-	cmd.Args = append(cmd.Args, "-i")
-	cmd.Args = append(cmd.Args, utils.BaseImageName+r.Config.Name)
+	if len(r.CustomImage) > 0 {
+		cmd.Args = append(cmd.Args, r.CustomImage)
+	} else {
+		cmd.Args = append(cmd.Args, r.Config.RunImage())
+	}
 
 	for _, c := range r.Cmd {
 		cmd.Args = append(cmd.Args, c)
 	}
 
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = r.Stdin
-	if err := utils.CmdRunner(cmd).Run(); err != nil {
-		return err
+	if !r.Detatch {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = r.Stdin
+	}
+	runner := utils.CmdRunner(cmd)
+	if !r.DryRun {
+		if err := runner.Run(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -185,6 +216,18 @@ func (r *DockerPupsRunner) Run() error {
 
 func ContainerExists(container string) (bool, error) {
 	cmd := exec.Command("docker", "ps", "-a", "-q", "--filter", "name="+container)
+	result, err := utils.CmdRunner(cmd).Output()
+	if err != nil {
+		return false, err
+	}
+	if len(result) > 0 {
+		return true, nil
+	}
+	return false, nil
+}
+
+func ContainerRunning(container string) (bool, error) {
+	cmd := exec.Command("docker", "ps", "-q", "--filter", "name="+container)
 	result, err := utils.CmdRunner(cmd).Output()
 	if err != nil {
 		return false, err

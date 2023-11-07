@@ -15,17 +15,76 @@ import (
 type StartCmd struct {
 	Config        string `arg:"" name:"config" help:"config"`
 	DryRun        bool   `name:"dry-run" short:"n" help:"print start command only"`
-	GenMacAddress bool   `name:"mac-address" negatable:"" help:"assign a mac address"`
 	DockerArgs    string `name:"docker-args" help:"Extra arguments to pass when running docker"`
 	RunImage      string `name:"run-image" help:"Override the image used for running the container"`
+	Supervised    bool   `name:"supervised" help:"Supervised run"`
 }
 
 func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
-	_, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
+	//start stopped container first if exists
+	running, _ := docker.ContainerRunning(r.Config)
+	if running {
+		fmt.Println("Nothing to do, your container has already started!")
+		return nil
+	}
+	exists, _ := docker.ContainerExists(r.Config)
+	if exists {
+		fmt.Println("starting up existing container")
+		cmd := exec.CommandContext(*ctx, "docker", "start", r.Config)
+		fmt.Println(cmd)
+		if err := utils.CmdRunner(cmd).Run(); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
+	hostname := config.DockerHostname()
+	restart := true
+	detatch := true
+	if r.Supervised {
+		restart = false
+		detatch = false
+	}
 	//TODO: implement
+	runner := docker.DockerRunner{
+		Config:      config,
+		Ctx:         ctx,
+		ContainerId: r.Config,
+		DryRun:      r.DryRun,
+		CustomImage: r.RunImage,
+		Restart:     restart,
+		Detatch:     detatch,
+		ExtraArgs:   r.DockerArgs,
+		Hostname:    hostname,
+	}
+	return runner.Run()
+}
+
+type RunCmd struct {
+	Config     string `arg:"" name:"config" help:"config"`
+	RunImage   string `name:"run-image" help:"Override the image used for running the container"`
+	DockerArgs string `name:"docker-args" help:"Extra arguments to pass when running docker"`
+}
+
+func (r *RunCmd) Run(cli *Cli, ctx *context.Context) error {
+	//TODO: implement
+	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
+	if err != nil {
+		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
+	}
+	runner := docker.DockerRunner{
+		Config:      config,
+		Ctx:         ctx,
+		CustomImage: r.RunImage,
+		SkipPorts:   true,
+		Rm:          true,
+		ExtraArgs:   r.DockerArgs,
+	}
+	return runner.Run()
 	return nil
 }
 
@@ -48,16 +107,18 @@ func (r *StopCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type RestartCmd struct {
-	Config string `arg:"" name:"config" help:"config"`
+	Config     string `arg:"" name:"config" help:"config"`
+	DockerArgs string `name:"docker-args" help:"Extra arguments to pass when running docker"`
+	RunImage   string `name:"run-image" help:"Override the image used for running the container"`
 }
 
 func (r *RestartCmd) Run(cli *Cli, ctx *context.Context) error {
-	start := StartCmd{Config: r.Config}
+	start := StartCmd{Config: r.Config, DockerArgs: r.DockerArgs, RunImage: r.RunImage}
 	stop := StopCmd{Config: r.Config}
-	if err := start.Run(cli, ctx); err != nil {
+	if err := stop.Run(cli, ctx); err != nil {
 		return err
 	}
-	if err := stop.Run(cli, ctx); err != nil {
+	if err := start.Run(cli, ctx); err != nil {
 		return err
 	}
 	return nil
@@ -117,7 +178,8 @@ func (r *LogsCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type RebuildCmd struct {
-	Config string `arg:"" name:"config" help:"config"`
+	Config     string `arg:"" name:"config" help:"config"`
+	DockerArgs string `name:"docker-args" help:"Extra arguments to pass when running docker"`
 }
 
 func (r *RebuildCmd) Run(cli *Cli, ctx *context.Context) error {

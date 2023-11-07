@@ -167,6 +167,11 @@ type Cli struct {
 	LogsCmd    LogsCmd    `cmd:"" name:"logs" help:"print logs for container"`
 	CleanupCmd CleanupCmd `cmd:"" name:"cleanup" help:"cleanup containers"`
 	EnterCmd   EnterCmd   `cmd:"" name:"enter" help:"enter container"`
+	RunCmd     RunCmd     `cmd:"" name:"run" help:"runs command in docker container"`
+	StartCmd   StartCmd   `cmd:"" name:"start" help:"starts container"`
+	StopCmd   StopCmd   `cmd:"" name:"stop" help:"stops container"`
+	RestartCmd RestartCmd `cmd:"" name:"restart" help:"restarts container"`
+	RebuildCmd RebuildCmd `cmd:"" name:"rebuild" help:"rebuilds container"`
 }
 
 func main() {
