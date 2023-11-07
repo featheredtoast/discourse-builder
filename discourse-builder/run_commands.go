@@ -187,7 +187,8 @@ func (r *LogsCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type RebuildCmd struct {
-	Config string `arg:"" name:"config" help:"config"`
+	Config    string `arg:"" name:"config" help:"config"`
+	FullBuild bool   `name:"full-build" help:"full build image even when migrate on boot and precompile on boot is present in the config"`
 }
 
 func (r *RebuildCmd) Run(cli *Cli, ctx *context.Context) error {
@@ -210,11 +211,11 @@ func (r *RebuildCmd) Run(cli *Cli, ctx *context.Context) error {
 		return err
 	}
 	_, migrateOnBoot := config.Env["MIGRATE_ON_BOOT"]
-	if !migrateOnBoot {
+	if !migrateOnBoot || r.FullBuild {
 		migrate.Run(cli, ctx)
 	}
 	_, precompileOnBoot := config.Env["PRECOMPILE_ON_BOOT"]
-	if !precompileOnBoot {
+	if !precompileOnBoot || r.FullBuild {
 		configure.Run(cli, ctx)
 	}
 	if err := destroy.Run(cli, ctx); err != nil {
