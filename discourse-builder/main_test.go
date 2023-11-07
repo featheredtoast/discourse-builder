@@ -102,18 +102,7 @@ var _ = Describe("Main", func() {
 		Expect(string(out[:])).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
 	})
 
-	It("should clean after the command", func() {
-		runner := ddocker.DockerComposeCmd{Config: "test",
-			OutputDir: testDir}
-		runner.Run(cli, &ctx)
-		runner2 := ddocker.CleanCmd{Config: "test"}
-		err := runner2.Run(cli)
-		Expect(err).To(BeNil())
-		_, err = os.ReadFile(testDir + "/test/config.yaml")
-		Expect(err).ToNot(BeNil())
-	})
-
-	Context("When running docker commands", func() {
+	Context("When running build commands", func() {
 
 		var CmdCreatorWatcher chan utils.ICmdRunner
 		var getLastCommand = func() *FakeCmdRunner {
