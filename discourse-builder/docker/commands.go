@@ -126,6 +126,7 @@ func (r *DockerRunner) Run() error {
 	}
 	cmd.Args = append(cmd.Args, r.Config.Docker_Args)
 	cmd.Args = append(cmd.Args, r.ExtraArgs)
+	cmd.Args = append(cmd.Args, "-h")
 	cmd.Args = append(cmd.Args, r.Hostname)
 	cmd.Args = append(cmd.Args, "--name")
 	cmd.Args = append(cmd.Args, r.ContainerId)

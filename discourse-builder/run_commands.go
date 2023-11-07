@@ -42,7 +42,10 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
-	hostname := config.DockerHostname()
+	defaultHostname, _ := os.Hostname()
+	defaultHostname = defaultHostname + "-" + r.Config
+	hostname := config.DockerHostname(defaultHostname)
+
 	restart := true
 	detatch := true
 	if r.Supervised {

@@ -363,13 +363,13 @@ func (config *Config) RunImage() string {
 	return utils.BaseImageName + config.Name
 }
 
-func (config *Config) DockerHostname() string {
+func (config *Config) DockerHostname(defaultHostname string) string {
 	_, exists := config.Env["DOCKER_USE_HOSTNAME"]
+	re := regexp.MustCompile(`[^a-zA-Z-]`)
+	hostname := defaultHostname
 	if exists {
-		re := regexp.MustCompile(`[^a-zA-Z-]`)
-		hostname := config.Env["DISCOURSE_HOSTNAME"]
-		hostname = string(re.ReplaceAll([]byte(hostname), []byte("-"))[:])
-		return hostname
+		hostname = config.Env["DISCOURSE_HOSTNAME"]
 	}
-	return ""
+	hostname = string(re.ReplaceAll([]byte(hostname), []byte("-"))[:])
+	return hostname
 }
