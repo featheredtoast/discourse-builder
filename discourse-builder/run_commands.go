@@ -13,13 +13,14 @@ import (
 )
 
 type StartCmd struct {
-	Config        string `arg:"" name:"config" help:"config"`
-	DryRun        bool   `name:"dry-run" short:"n" help:"print start command only"`
-	DockerArgs    string `name:"docker-args" help:"Extra arguments to pass when running docker"`
-	RunImage      string `name:"run-image" help:"Override the image used for running the container"`
-	Supervised    bool   `name:"supervised" help:"Supervised run"`
+	Config     string `arg:"" name:"config" help:"config"`
+	DryRun     bool   `name:"dry-run" short:"n" help:"print start command only"`
+	DockerArgs string `name:"docker-args" help:"Extra arguments to pass when running docker"`
+	RunImage   string `name:"run-image" help:"Override the image used for running the container"`
+	Supervised bool   `name:"supervised" help:"Supervised run"`
 }
 
+// TODO: commands started here cannot be stopped unless forced???
 func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 	//start stopped container first if exists
 	running, _ := docker.ContainerRunning(r.Config)
@@ -61,16 +62,17 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 		CustomImage: r.RunImage,
 		Restart:     restart,
 		Detatch:     detatch,
-		ExtraArgs:   r.DockerArgs,
+		ExtraFlags:  r.DockerArgs,
 		Hostname:    hostname,
 	}
 	return runner.Run()
 }
 
 type RunCmd struct {
-	Config     string `arg:"" name:"config" help:"config"`
-	RunImage   string `name:"run-image" help:"Override the image used for running the container"`
-	DockerArgs string `name:"docker-args" help:"Extra arguments to pass when running docker"`
+	RunImage   string   `name:"run-image" help:"Override the image used for running the container"`
+	DockerArgs string   `name:"docker-args" help:"Extra arguments to pass when running docker"`
+	Config     string   `arg:"" name:"config" help:"config"`
+	Cmd        []string `arg:"" help:"command to run" passthrough:""`
 }
 
 func (r *RunCmd) Run(cli *Cli, ctx *context.Context) error {
@@ -85,7 +87,8 @@ func (r *RunCmd) Run(cli *Cli, ctx *context.Context) error {
 		CustomImage: r.RunImage,
 		SkipPorts:   true,
 		Rm:          true,
-		ExtraArgs:   r.DockerArgs,
+		ExtraFlags:  r.DockerArgs,
+		Cmd:         r.Cmd,
 	}
 	return runner.Run()
 	return nil

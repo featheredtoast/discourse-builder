@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"github.com/discourse/discourse_docker/discourse-builder/config"
 	"github.com/discourse/discourse_docker/discourse-builder/utils"
 	"golang.org/x/sys/unix"
@@ -55,7 +56,7 @@ type DockerRunner struct {
 	Config      *config.Config
 	Ctx         *context.Context
 	ExtraEnv    []string
-	ExtraArgs   string
+	ExtraFlags string
 	Rm          bool
 	ContainerId string
 	CustomImage string
@@ -124,8 +125,12 @@ func (r *DockerRunner) Run() error {
 	} else {
 		cmd.Args = append(cmd.Args, "-i")
 	}
-	cmd.Args = append(cmd.Args, r.Config.Docker_Args)
-	cmd.Args = append(cmd.Args, r.ExtraArgs)
+	if len(r.Config.Docker_Args) > 0 {
+		cmd.Args = append(cmd.Args, r.Config.Docker_Args)
+	}
+	if len(r.ExtraFlags) > 0 {
+		cmd.Args = append(cmd.Args, r.ExtraFlags)
+	}
 	cmd.Args = append(cmd.Args, "-h")
 	cmd.Args = append(cmd.Args, r.Hostname)
 	cmd.Args = append(cmd.Args, "--name")
@@ -146,7 +151,9 @@ func (r *DockerRunner) Run() error {
 		cmd.Stdin = r.Stdin
 	}
 	runner := utils.CmdRunner(cmd)
-	if !r.DryRun {
+	if r.DryRun {
+		fmt.Println(cmd)
+	} else {
 		if err := runner.Run(); err != nil {
 			return err
 		}
