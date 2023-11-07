@@ -10,6 +10,7 @@ import (
 	"github.com/discourse/discourse_docker/discourse-builder/utils"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 type StartCmd struct {
@@ -53,6 +54,9 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 		restart = false
 		detatch = false
 	}
+
+	extraFlags := strings.Fields(r.DockerArgs)
+	//TODO: boot command
 	//TODO: implement
 	runner := docker.DockerRunner{
 		Config:      config,
@@ -62,7 +66,7 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 		CustomImage: r.RunImage,
 		Restart:     restart,
 		Detatch:     detatch,
-		ExtraFlags:  r.DockerArgs,
+		ExtraFlags:  extraFlags,
 		Hostname:    hostname,
 	}
 	return runner.Run()
@@ -81,14 +85,15 @@ func (r *RunCmd) Run(cli *Cli, ctx *context.Context) error {
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
+	extraFlags := strings.Fields(r.DockerArgs)
 	runner := docker.DockerRunner{
 		Config:      config,
 		Ctx:         ctx,
 		CustomImage: r.RunImage,
 		SkipPorts:   true,
 		Rm:          true,
-		ExtraFlags:  r.DockerArgs,
 		Cmd:         r.Cmd,
+		ExtraFlags:  extraFlags,
 	}
 	return runner.Run()
 	return nil

@@ -285,6 +285,10 @@ func (config *Config) EnvArray(includeKnownSecrets bool) []string {
 	return envs
 }
 
+func (config *Config) DockerArgs() []string {
+	return strings.Fields(config.Docker_Args)
+}
+
 func (config *Config) ExportEnv() string {
 	builder := []string{}
 	for k, v := range config.Env {

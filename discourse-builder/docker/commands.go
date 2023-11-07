@@ -56,7 +56,7 @@ type DockerRunner struct {
 	Config      *config.Config
 	Ctx         *context.Context
 	ExtraEnv    []string
-	ExtraFlags string
+	ExtraFlags  []string
 	Rm          bool
 	ContainerId string
 	CustomImage string
@@ -122,14 +122,13 @@ func (r *DockerRunner) Run() error {
 	}
 	if r.Detatch {
 		cmd.Args = append(cmd.Args, "-d")
-	} else {
-		cmd.Args = append(cmd.Args, "-i")
 	}
-	if len(r.Config.Docker_Args) > 0 {
-		cmd.Args = append(cmd.Args, r.Config.Docker_Args)
+	cmd.Args = append(cmd.Args, "-i")
+	for _, f := range r.Config.DockerArgs() {
+		cmd.Args = append(cmd.Args, f)
 	}
-	if len(r.ExtraFlags) > 0 {
-		cmd.Args = append(cmd.Args, r.ExtraFlags)
+	for _, f := range r.ExtraFlags {
+		cmd.Args = append(cmd.Args, f)
 	}
 	cmd.Args = append(cmd.Args, "-h")
 	cmd.Args = append(cmd.Args, r.Hostname)
