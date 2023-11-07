@@ -46,6 +46,7 @@ var _ = Describe("Main", func() {
 	var ctx context.Context
 
 	BeforeEach(func() {
+		utils.DockerPath = "docker"
 		out = &bytes.Buffer{}
 		ddocker.Out = out
 		testDir, _ = os.MkdirTemp("", "ddocker-test")

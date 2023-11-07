@@ -149,9 +149,14 @@ func (r *RawYamlCmd) Run(cli *Cli) error {
 	return nil
 }
 
+//TODO $DOCKER_HOST to figure out docker ip?? like for docker-machine?
+//TODO stable mac address?
+//TODO file permissions on output
+//TODO dry run start output now needs to be substituted with env so it can be run outside?
 type Cli struct {
 	ConfDir      string             `short:"c" default:"./containers" help:"pups config directory"`
 	TemplatesDir string             `short:"t" default:"." help:"parent directory containing a templates/ directory with pups yaml templates"`
+	// TODO: how do we handle output dir? we have a temp dir and output dir -- tmp for running and building stuff, output for generate files
 	OutputDir    string             `short:"o" default:"./tmp" help:"parent output folder"`
 	ContainerId  string             `hidden:"" optional:""`
 	ForceMkdir   bool               `short:"p" name:"parent-dirs" help:"Create intermediate output directories as required.  If this option is not specified, the full path prefix of each operand must already exist."`
@@ -161,6 +166,7 @@ type Cli struct {
 	ConfigureCmd DockerConfigureCmd `cmd:"" name:"configure" help:"Configure and save an image with all dependencies and environment baked in. Updates themes and precompiles all assets."`
 	MigrateCmd   DockerMigrateCmd   `cmd:"" name:"migrate" help:"Run migration tasks on an image."`
 	BootstrapCmd DockerBootstrapCmd `cmd:"" name:"bootstrap" help:"Build, migrate, and configure an image"`
+	//TODO: what do we do with clean command? how do we better export docker/compose stuff?
 	Clean        CleanCmd           `cmd:"" name:"old-clean" help:"clean generated files for config"`
 
 	DestroyCmd DestroyCmd `cmd:"" name:"destroy" help:"shutdown and destroy container"`

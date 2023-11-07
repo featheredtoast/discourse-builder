@@ -13,6 +13,7 @@ import (
 	"strings"
 )
 
+// TODO: figure out if we still need mac address??
 type StartCmd struct {
 	Config     string `arg:"" name:"config" help:"config"`
 	DryRun     bool   `name:"dry-run" short:"n" help:"print start command only"`
@@ -31,7 +32,7 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 	exists, _ := docker.ContainerExists(r.Config)
 	if exists && !r.DryRun {
 		fmt.Println("starting up existing container")
-		cmd := exec.CommandContext(*ctx, "docker", "start", r.Config)
+		cmd := exec.CommandContext(*ctx, utils.DockerPath, "start", r.Config)
 		fmt.Println(cmd)
 		if err := utils.CmdRunner(cmd).Run(); err != nil {
 			return err
@@ -144,12 +145,12 @@ func (r *DestroyCmd) Run(cli *Cli, ctx *context.Context) error {
 		return nil
 	}
 
-	cmd := exec.CommandContext(*ctx, "docker", "stop", "-t", "600", r.Config)
+	cmd := exec.CommandContext(*ctx, utils.DockerPath, "stop", "-t", "600", r.Config)
 	fmt.Println(cmd)
 	if err := utils.CmdRunner(cmd).Run(); err != nil {
 		return err
 	}
-	cmd = exec.CommandContext(*ctx, "docker", "rm", r.Config)
+	cmd = exec.CommandContext(*ctx, utils.DockerPath, "rm", r.Config)
 	fmt.Println(cmd)
 	if err := utils.CmdRunner(cmd).Run(); err != nil {
 		return err
@@ -162,7 +163,7 @@ type EnterCmd struct {
 }
 
 func (r *EnterCmd) Run(cli *Cli, ctx *context.Context) error {
-	cmd := exec.CommandContext(*ctx, "docker", "exec", "-it", r.Config, "/bin/bash", "--login")
+	cmd := exec.CommandContext(*ctx, utils.DockerPath, "exec", "-it", r.Config, "/bin/bash", "--login")
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -177,7 +178,7 @@ type LogsCmd struct {
 }
 
 func (r *LogsCmd) Run(cli *Cli, ctx *context.Context) error {
-	cmd := exec.CommandContext(*ctx, "docker", "logs", r.Config)
+	cmd := exec.CommandContext(*ctx, utils.DockerPath, "logs", r.Config)
 	output, err := utils.CmdRunner(cmd).Output()
 	if err != nil {
 		return err
@@ -230,11 +231,11 @@ func (r *RebuildCmd) Run(cli *Cli, ctx *context.Context) error {
 type CleanupCmd struct{}
 
 func (r *CleanupCmd) Run(cli *Cli, ctx *context.Context) error {
-	cmd := exec.CommandContext(*ctx, "docker", "container", "prune", "--filter", "until=1h")
+	cmd := exec.CommandContext(*ctx, utils.DockerPath, "container", "prune", "--filter", "until=1h")
 	if err := utils.CmdRunner(cmd).Run(); err != nil {
 		return err
 	}
-	cmd = exec.CommandContext(*ctx, "docker", "image", "prune", "--all", "--filter", "until=1h")
+	cmd = exec.CommandContext(*ctx, utils.DockerPath, "image", "prune", "--all", "--filter", "until=1h")
 	if err := utils.CmdRunner(cmd).Run(); err != nil {
 		return err
 	}

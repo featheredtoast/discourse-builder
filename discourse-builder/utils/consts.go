@@ -1,5 +1,9 @@
 package utils
 
+import (
+	"os/exec"
+)
+
 const BaseImageName = "local_discourse/"
 
 // Known secrets, or otherwise not public info from config so we can build public images
@@ -23,3 +27,14 @@ var KnownSecrets = []string{
 	"DISCOURSE_SAML_TARGET_URL",
 	"DISCOURSE_SAML_NAME_IDENTIFIER_FORMAT",
 }
+
+func findDockerPath() string {
+	location, err := exec.LookPath("docker.io")
+	if err != nil {
+		location, _ := exec.LookPath("docker")
+		return location
+	}
+	return location
+}
+
+var DockerPath = findDockerPath()

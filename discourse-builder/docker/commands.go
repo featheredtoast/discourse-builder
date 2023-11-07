@@ -22,7 +22,7 @@ type DockerBuilder struct {
 }
 
 func (r *DockerBuilder) Run() error {
-	cmd := exec.CommandContext(*r.Ctx, "docker", "build")
+	cmd := exec.CommandContext(*r.Ctx, utils.DockerPath, "build")
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd.Cancel = func() error {
 		return unix.Kill(-cmd.Process.Pid, unix.SIGINT)
@@ -70,7 +70,7 @@ type DockerRunner struct {
 }
 
 func (r *DockerRunner) Run() error {
-	cmd := exec.CommandContext(*r.Ctx, "docker", "run")
+	cmd := exec.CommandContext(*r.Ctx, utils.DockerPath, "run")
 
 	// Detatch signifies we do not want to supervise
 	if !r.Detatch {
@@ -215,14 +215,14 @@ func (r *DockerPupsRunner) Run() error {
 		//clean up container
 		runCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		cmd = exec.CommandContext(runCtx, "docker", "rm", "-f", r.ContainerId)
+		cmd = exec.CommandContext(runCtx, utils.DockerPath, "rm", "-f", r.ContainerId)
 		utils.CmdRunner(cmd).Run()
 	}
 	return nil
 }
 
 func ContainerExists(container string) (bool, error) {
-	cmd := exec.Command("docker", "ps", "-a", "-q", "--filter", "name="+container)
+	cmd := exec.Command(utils.DockerPath, "ps", "-a", "-q", "--filter", "name="+container)
 	result, err := utils.CmdRunner(cmd).Output()
 	if err != nil {
 		return false, err
@@ -234,7 +234,7 @@ func ContainerExists(container string) (bool, error) {
 }
 
 func ContainerRunning(container string) (bool, error) {
-	cmd := exec.Command("docker", "ps", "-q", "--filter", "name="+container)
+	cmd := exec.Command(utils.DockerPath, "ps", "-q", "--filter", "name="+container)
 	result, err := utils.CmdRunner(cmd).Output()
 	if err != nil {
 		return false, err
