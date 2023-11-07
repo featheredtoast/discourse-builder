@@ -8,10 +8,31 @@ import (
 	"os"
 )
 
+/*
+ * raw-yaml
+ * compose
+ * args (args, run-image, boot-command, hostname)
+ */
+
 type CliGenerate struct {
 	DockerCompose DockerComposeCmd `cmd:"" name:"docker-compose" help:"Create docker compose setup. The builder also generates an env file for you to source {conf}.env to handle multiline environment vars before running docker compose build"`
 	DockerArgs    DockerArgsCmd    `cmd:"" name:"docker-args" help:"Generate docker run args"`
+	RawYaml RawYamlCmd `cmd:"" name:"raw-yaml" help:"Print raw config, concatenated in pups format"`
 }
+
+type RawYamlCmd struct {
+	Config string `arg:"" name:"config" help:"config"`
+}
+
+func (r *RawYamlCmd) Run(cli *Cli) error {
+	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
+	if err != nil {
+		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
+	}
+	fmt.Fprint(Out, config.Yaml())
+	return nil
+}
+
 
 type DockerComposeCmd struct {
 	BakeEnv bool `short:"e" help:"Bake in the configured environment to image after build."`

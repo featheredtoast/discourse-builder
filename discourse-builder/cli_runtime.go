@@ -13,6 +13,18 @@ import (
 	"strings"
 )
 
+/*
+ * start
+ * run
+ * stop
+ * cleanup
+ * destroy
+ * logs
+ * enter
+ * rebuild
+ * restart
+ */
+
 type StartCmd struct {
 	Config     string `arg:"" name:"config" help:"config"`
 	DryRun     bool   `name:"dry-run" short:"n" help:"print start command only"`

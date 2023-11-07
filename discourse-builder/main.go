@@ -2,10 +2,8 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/alecthomas/kong"
-	"github.com/discourse/discourse_docker/discourse-builder/config"
 	"github.com/google/uuid"
 	"golang.org/x/sys/unix"
 	"io"
@@ -15,35 +13,6 @@ import (
 )
 
 var Out io.Writer = os.Stdout
-
-type CleanCmd struct {
-	Config string `arg:"" name:"config" help:"config to clean"`
-}
-
-func (r *CleanCmd) Run(cli *Cli) error {
-	dir := cli.OutputDir + "/" + r.Config
-	os.Remove(dir + "/docker-compose.yaml")
-	os.Remove(dir + "/config.yaml")
-	os.Remove(dir + "/.envrc")
-	os.Remove(dir + "/" + "Dockerfile")
-	if err := os.Remove(dir); err != nil {
-		return err
-	}
-	return nil
-}
-
-type RawYamlCmd struct {
-	Config string `arg:"" name:"config" help:"config"`
-}
-
-func (r *RawYamlCmd) Run(cli *Cli) error {
-	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
-	if err != nil {
-		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
-	}
-	fmt.Fprint(Out, config.Yaml())
-	return nil
-}
 
 // TODO file permissions on output probably better set 640
 // TODO dry run start output now needs to be substituted with env so it can be run outside? right now env is --env ENV rather than --env ENV=VAL
@@ -55,7 +24,6 @@ type Cli struct {
 	ContainerId  string             `hidden:"" optional:""`
 	ForceMkdir   bool               `short:"p" name:"parent-dirs" help:"Create intermediate output directories as required.  If this option is not specified, the full path prefix of each operand must already exist."`
 	CliGenerate  CliGenerate        `cmd:"" name:"generate" help:"generate commands"`
-	RawYaml      RawYamlCmd         `cmd:"" name:"raw-yaml" help:"Print raw config, concatenated in pups format"`
 	BuildCmd     DockerBuildCmd     `cmd:"" name:"build" help:"Build a base image with no dependencies."`
 	ConfigureCmd DockerConfigureCmd `cmd:"" name:"configure" help:"Configure and save an image with all dependencies and environment baked in. Updates themes and precompiles all assets."`
 	MigrateCmd   DockerMigrateCmd   `cmd:"" name:"migrate" help:"Run migration tasks on an image."`

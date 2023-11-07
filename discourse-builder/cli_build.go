@@ -10,6 +10,12 @@ import (
 	"strings"
 )
 
+/*
+ * build
+ * migrate
+ * configure
+ * bootstrap
+ */
 type DockerBuildCmd struct {
 	BakeEnv bool `short:"e" help:"Bake in the configured environment to image after build."`
 
@@ -106,6 +112,22 @@ func (r *DockerBootstrapCmd) Run(cli *Cli, ctx *context.Context) error {
 		return err
 	}
 	if err := configureStep.Run(cli, ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
+type CleanCmd struct {
+	Config string `arg:"" name:"config" help:"config to clean"`
+}
+
+func (r *CleanCmd) Run(cli *Cli) error {
+	dir := cli.OutputDir + "/" + r.Config
+	os.Remove(dir + "/docker-compose.yaml")
+	os.Remove(dir + "/config.yaml")
+	os.Remove(dir + "/.envrc")
+	os.Remove(dir + "/" + "Dockerfile")
+	if err := os.Remove(dir); err != nil {
 		return err
 	}
 	return nil
