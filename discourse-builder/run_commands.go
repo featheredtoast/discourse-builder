@@ -187,12 +187,42 @@ func (r *LogsCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type RebuildCmd struct {
-	Config     string `arg:"" name:"config" help:"config"`
-	DockerArgs string `name:"docker-args" help:"Extra arguments to pass when running docker"`
+	Config string `arg:"" name:"config" help:"config"`
 }
 
 func (r *RebuildCmd) Run(cli *Cli, ctx *context.Context) error {
-	//TODO implement
+	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
+	if err != nil {
+		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
+	}
+
+	build := DockerBuildCmd{Config: r.Config}
+	configure := DockerConfigureCmd{Config: r.Config}
+	migrate := DockerMigrateCmd{Config: r.Config}
+	start := StartCmd{Config: r.Config}
+	stop := StopCmd{Config: r.Config}
+	destroy := DestroyCmd{Config: r.Config}
+
+	if err := build.Run(cli, ctx); err != nil {
+		return err
+	}
+	if err := stop.Run(cli, ctx); err != nil {
+		return err
+	}
+	_, migrateOnBoot := config.Env["MIGRATE_ON_BOOT"]
+	if !migrateOnBoot {
+		migrate.Run(cli, ctx)
+	}
+	_, precompileOnBoot := config.Env["PRECOMPILE_ON_BOOT"]
+	if !precompileOnBoot {
+		configure.Run(cli, ctx)
+	}
+	if err := destroy.Run(cli, ctx); err != nil {
+		return err
+	}
+	if err := start.Run(cli, ctx); err != nil {
+		return err
+	}
 	return nil
 }
 
