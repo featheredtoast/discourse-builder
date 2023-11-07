@@ -172,6 +172,12 @@ func (r *DockerPupsRunner) Run() error {
 		if err := CmdRunner(cmd).Run(); err != nil {
 			return err
 		}
+
+		//clean up container
+		runCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		cmd = exec.CommandContext(runCtx, "docker", "rm", "-f", r.ContainerId)
+		CmdRunner(cmd).Run()
 	}
 	return nil
 }

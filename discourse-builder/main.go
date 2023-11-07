@@ -14,7 +14,6 @@ import (
 	"os/exec"
 	"os/signal"
 	"strings"
-	"time"
 )
 
 var Out io.Writer = os.Stdout
@@ -238,13 +237,6 @@ func main() {
 			cancel()
 		case <-done:
 		}
-
-		//clean up container
-		// TODO: would be cool to only clean up when commands signal that they've created something that needs cleaning.
-		runCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		cmd := exec.CommandContext(runCtx, "docker", "rm", "-f", containerId)
-		CmdRunner(cmd).Run()
 	}(cli.ContainerId)
 	err := ctx.Run()
 	if err == nil {

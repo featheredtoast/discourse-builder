@@ -160,6 +160,10 @@ var _ = Describe("Main", func() {
 			Expect(cmd.Cmd.String()).To(ContainSubstring("discourse-build"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("local_discourse/test"))
 			Expect(cmd.Cmd.Env).ToNot(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
+
+			// configure also cleans up
+			cmd = getLastCommand()
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker rm -f discourse-build-"))
 		}
 
 		BeforeEach(func() {
