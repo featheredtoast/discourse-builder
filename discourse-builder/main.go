@@ -119,33 +119,6 @@ func (r *DockerBootstrapCmd) Run(cli *Cli, ctx *context.Context) error {
 	return nil
 }
 
-type DockerComposeCmd struct {
-	BakeEnv bool `short:"e" help:"Bake in the configured environment to image after build."`
-
-	Config string `arg:"" name:"config" help:"config"`
-}
-
-func (r *DockerComposeCmd) Run(cli *Cli, ctx *context.Context) error {
-	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
-	if err != nil {
-		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
-	}
-	dir := cli.OutputDir + "/" + r.Config
-	if cli.ForceMkdir {
-		if err := os.MkdirAll(dir, 0755); err != nil && !os.IsExist(err) {
-			return err
-		}
-	} else {
-		if err := os.Mkdir(dir, 0755); err != nil && !os.IsExist(err) {
-			return err
-		}
-	}
-	if err := config.WriteDockerCompose(dir, r.BakeEnv); err != nil {
-		return err
-	}
-	return nil
-}
-
 type CleanCmd struct {
 	Config string `arg:"" name:"config" help:"config to clean"`
 }
@@ -175,46 +148,19 @@ func (r *RawYamlCmd) Run(cli *Cli) error {
 	return nil
 }
 
-type GenDockerRunArgsCmd struct {
-	Config       string `arg:"" name:"config" help:"config"`
-	Type         string `default:"args" enum:"args,run-image,boot-command,hostname" help:"the type of run arg - args, run-image, boot-command, hostname"`
-	IncludePorts bool   `default:"true" name:"include-ports" negatable:"" help:"include ports in run args"`
-}
-
-func (r *GenDockerRunArgsCmd) Run(cli *Cli) error {
-	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
-	if err != nil {
-		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
-	}
-	switch r.Type {
-	case "args":
-		fmt.Fprint(Out, config.DockerArgsCli(r.IncludePorts))
-	case "run-image":
-		fmt.Fprint(Out, config.RunImageCli())
-	case "boot-command":
-		fmt.Fprint(Out, config.BootCommand())
-	case "hostname":
-		fmt.Fprint(Out, config.DockerHostnameCli())
-	default:
-		return errors.New("unknown docker args type")
-	}
-	return nil
-}
-
 type Cli struct {
-	ConfDir          string              `short:"c" default:"./containers" help:"pups config directory"`
-	TemplatesDir     string              `short:"t" default:"." help:"parent directory containing a templates/ directory with pups yaml templates"`
-	OutputDir        string              `short:"o" default:"./tmp" help:"parent output folder"`
-	ContainerId      string              `hidden:"" optional:""`
-	ForceMkdir       bool                `short:"p" name:"parent-dirs" help:"Create intermediate output directories as required.  If this option is not specified, the full path prefix of each operand must already exist."`
-	DockerCompose    DockerComposeCmd    `cmd:"" name:"docker-compose" help:"Create docker compose setup. The builder also generates an env file for you to source {conf}.env to handle multiline environment vars before running docker compose build"`
-	RawYaml          RawYamlCmd          `cmd:"" name:"raw-yaml" help:"Print raw config, concatenated in pups format"`
-	GenDockerRunArgs GenDockerRunArgsCmd `cmd:"" name:"gen-docker-run-args" help:"Generate docker run args"`
-	BuildCmd         DockerBuildCmd      `cmd:"" name:"build" help:"Build a base image with no dependencies."`
-	ConfigureCmd     DockerConfigureCmd  `cmd:"" name:"configure" help:"Configure and save an image with all dependencies and environment baked in. Updates themes and precompiles all assets."`
-	MigrateCmd       DockerMigrateCmd    `cmd:"" name:"migrate" help:"Run migration tasks on an image."`
-	BootstrapCmd     DockerBootstrapCmd  `cmd:"" name:"bootstrap" help:"Build, migrate, and configure an image"`
-	Clean            CleanCmd            `cmd:"" name:"clean" help:"clean generated files for config"`
+	ConfDir      string             `short:"c" default:"./containers" help:"pups config directory"`
+	TemplatesDir string             `short:"t" default:"." help:"parent directory containing a templates/ directory with pups yaml templates"`
+	OutputDir    string             `short:"o" default:"./tmp" help:"parent output folder"`
+	ContainerId  string             `hidden:"" optional:""`
+	ForceMkdir   bool               `short:"p" name:"parent-dirs" help:"Create intermediate output directories as required.  If this option is not specified, the full path prefix of each operand must already exist."`
+	CliGenerate  CliGenerate        `cmd:"" alias:"g" name:"generate" help:"generate commands"`
+	RawYaml      RawYamlCmd         `cmd:"" name:"raw-yaml" help:"Print raw config, concatenated in pups format"`
+	BuildCmd     DockerBuildCmd     `cmd:"" name:"build" help:"Build a base image with no dependencies."`
+	ConfigureCmd DockerConfigureCmd `cmd:"" name:"configure" help:"Configure and save an image with all dependencies and environment baked in. Updates themes and precompiles all assets."`
+	MigrateCmd   DockerMigrateCmd   `cmd:"" name:"migrate" help:"Run migration tasks on an image."`
+	BootstrapCmd DockerBootstrapCmd `cmd:"" name:"bootstrap" help:"Build, migrate, and configure an image"`
+	Clean        CleanCmd           `cmd:"" name:"clean" help:"clean generated files for config"`
 }
 
 func main() {
