@@ -59,6 +59,7 @@ type DockerRunner struct {
 	ContainerId string
 	Cmd         []string
 	Stdin       io.Reader
+	SkipPorts   bool
 }
 
 func (r *DockerRunner) Run() error {
@@ -80,13 +81,15 @@ func (r *DockerRunner) Run() error {
 		cmd.Args = append(cmd.Args, "--label")
 		cmd.Args = append(cmd.Args, k+"="+v)
 	}
-	for _, v := range r.Config.Expose {
-		if strings.Contains(v, ":") {
-			cmd.Args = append(cmd.Args, "-p")
-			cmd.Args = append(cmd.Args, v)
-		} else {
-			cmd.Args = append(cmd.Args, "--expose")
-			cmd.Args = append(cmd.Args, v)
+	if !r.SkipPorts {
+		for _, v := range r.Config.Expose {
+			if strings.Contains(v, ":") {
+				cmd.Args = append(cmd.Args, "-p")
+				cmd.Args = append(cmd.Args, v)
+			} else {
+				cmd.Args = append(cmd.Args, "--expose")
+				cmd.Args = append(cmd.Args, v)
+			}
 		}
 	}
 	for _, v := range r.Config.Volumes {
