@@ -56,8 +56,7 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 	}
 
 	extraFlags := strings.Fields(r.DockerArgs)
-	//TODO: boot command
-	//TODO: implement
+	bootCmd := config.BootCommand()
 	runner := docker.DockerRunner{
 		Config:      config,
 		Ctx:         ctx,
@@ -68,6 +67,7 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 		Detatch:     detatch,
 		ExtraFlags:  extraFlags,
 		Hostname:    hostname,
+		Cmd:         []string{bootCmd},
 	}
 	return runner.Run()
 }
@@ -80,7 +80,6 @@ type RunCmd struct {
 }
 
 func (r *RunCmd) Run(cli *Cli, ctx *context.Context) error {
-	//TODO: implement
 	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
