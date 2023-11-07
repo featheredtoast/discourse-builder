@@ -273,9 +273,12 @@ func (config *Config) BootCommand() string {
 	}
 }
 
-func (config *Config) EnvArray() []string {
+func (config *Config) EnvArray(includeKnownSecrets bool) []string {
 	envs := []string{}
 	for k, v := range config.Env {
+		if !includeKnownSecrets && slices.Contains(utils.KnownSecrets, k) {
+			continue
+		}
 		envs = append(envs, k+"="+v)
 	}
 	slices.Sort(envs)

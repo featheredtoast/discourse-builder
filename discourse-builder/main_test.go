@@ -119,7 +119,10 @@ var _ = Describe("Main", func() {
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker build"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("--build-arg DISCOURSE_DEVELOPER_EMAILS"))
 			Expect(cmd.Cmd.Dir).To(Equal(testDir + "/test"))
-			Expect(cmd.Cmd.Env).To(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
+
+			//db password is ignored
+			Expect(cmd.Cmd.Env).ToNot(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
+			Expect(cmd.Cmd.Env).ToNot(ContainElement("DISCOURSEDB_SOCKET="))
 			buf := new(strings.Builder)
 			io.Copy(buf, cmd.Cmd.Stdin)
 			// docker build's stdin is a dockerfile

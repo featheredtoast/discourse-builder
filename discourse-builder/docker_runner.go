@@ -27,7 +27,7 @@ func (r *DockerBuilder) Run() error {
 		return unix.Kill(-cmd.Process.Pid, unix.SIGINT)
 	}
 	cmd.Dir = r.Dir
-	cmd.Env = r.Config.EnvArray()
+	cmd.Env = r.Config.EnvArray(false)
 	cmd.Env = append(cmd.Env, "BUILDKIT_PROGRESS=plain")
 	for k, _ := range r.Config.Env {
 		cmd.Args = append(cmd.Args, "--build-arg")
@@ -68,7 +68,7 @@ func (r *DockerRunner) Run() error {
 	cmd.Cancel = func() error {
 		return unix.Kill(-cmd.Process.Pid, unix.SIGINT)
 	}
-	cmd.Env = r.Config.EnvArray()
+	cmd.Env = r.Config.EnvArray(true)
 	for k, _ := range r.Config.Env {
 		cmd.Args = append(cmd.Args, "--env")
 		cmd.Args = append(cmd.Args, k)
