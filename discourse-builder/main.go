@@ -6,119 +6,15 @@ import (
 	"fmt"
 	"github.com/alecthomas/kong"
 	"github.com/discourse/discourse_docker/discourse-builder/config"
-	"github.com/discourse/discourse_docker/discourse-builder/docker"
-	"github.com/discourse/discourse_docker/discourse-builder/utils"
 	"github.com/google/uuid"
 	"golang.org/x/sys/unix"
 	"io"
 	"os"
 	"os/exec"
 	"os/signal"
-	"strings"
 )
 
 var Out io.Writer = os.Stdout
-
-type DockerBuildCmd struct {
-	BakeEnv bool `short:"e" help:"Bake in the configured environment to image after build."`
-
-	Config string `arg:"" name:"config" help:"configuration"`
-}
-
-func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
-	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
-	if err != nil {
-		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
-	}
-
-	dir := cli.OutputDir + "/" + r.Config
-	if cli.ForceMkdir {
-		if err := os.MkdirAll(dir, 0755); err != nil && !os.IsExist(err) {
-			return err
-		}
-	} else {
-		if err := os.Mkdir(dir, 0755); err != nil && !os.IsExist(err) {
-			return err
-		}
-	}
-	if err := config.WriteYamlConfig(dir); err != nil {
-		return err
-	}
-
-	pupsArgs := "--skip-tags=precompile,migrate,db"
-	builder := docker.DockerBuilder{
-		Config: config,
-		Ctx:    ctx,
-		Stdin:  strings.NewReader(config.Dockerfile(pupsArgs, r.BakeEnv)),
-		Dir:    dir,
-	}
-	if err := builder.Run(); err != nil {
-		return err
-	}
-	cleaner := CleanCmd{Config: r.Config}
-	cleaner.Run(cli)
-
-	return nil
-}
-
-type DockerConfigureCmd struct {
-	Config string `arg:"" name:"config" help:"config"`
-}
-
-func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
-	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
-	if err != nil {
-		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
-	}
-	pups := docker.DockerPupsRunner{
-		Config:         config,
-		PupsArgs:       "--tags=db,precompile",
-		SavedImageName: utils.BaseImageName + r.Config,
-		SkipEmber:      true,
-		Ctx:            ctx,
-		ContainerId:    cli.ContainerId,
-	}
-	return pups.Run()
-}
-
-type DockerMigrateCmd struct {
-	Config string `arg:"" name:"config" help:"config"`
-}
-
-func (r *DockerMigrateCmd) Run(cli *Cli, ctx *context.Context) error {
-	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
-	if err != nil {
-		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
-	}
-	pups := docker.DockerPupsRunner{
-		Config:      config,
-		PupsArgs:    "--tags=db,migrate",
-		SkipEmber:   true,
-		Ctx:         ctx,
-		ContainerId: cli.ContainerId,
-	}
-	return pups.Run()
-}
-
-type DockerBootstrapCmd struct {
-	Config string `arg:"" name:"config" help:"config"`
-}
-
-func (r *DockerBootstrapCmd) Run(cli *Cli, ctx *context.Context) error {
-	buildStep := DockerBuildCmd{Config: r.Config, BakeEnv: false}
-	migrateStep := DockerMigrateCmd{Config: r.Config}
-	configureStep := DockerConfigureCmd{Config: r.Config}
-	if err := buildStep.Run(cli, ctx); err != nil {
-		return err
-	}
-	if err := migrateStep.Run(cli, ctx); err != nil {
-		return err
-	}
-	if err := configureStep.Run(cli, ctx); err != nil {
-		return err
-	}
-	return nil
-}
 
 type CleanCmd struct {
 	Config string `arg:"" name:"config" help:"config to clean"`
@@ -149,13 +45,11 @@ func (r *RawYamlCmd) Run(cli *Cli) error {
 	return nil
 }
 
-//TODO $DOCKER_HOST to figure out docker ip?? like for docker-machine?
-//TODO stable mac address?
-//TODO file permissions on output
-//TODO dry run start output now needs to be substituted with env so it can be run outside?
+// TODO file permissions on output probably better set 640
+// TODO dry run start output now needs to be substituted with env so it can be run outside? right now env is --env ENV rather than --env ENV=VAL
 type Cli struct {
-	ConfDir      string             `short:"c" default:"./containers" help:"pups config directory"`
-	TemplatesDir string             `short:"t" default:"." help:"parent directory containing a templates/ directory with pups yaml templates"`
+	ConfDir      string `short:"c" default:"./containers" help:"pups config directory"`
+	TemplatesDir string `short:"t" default:"." help:"parent directory containing a templates/ directory with pups yaml templates"`
 	// TODO: how do we handle output dir? we have a temp dir and output dir -- tmp for running and building stuff, output for generate files
 	OutputDir    string             `short:"o" default:"./tmp" help:"parent output folder"`
 	ContainerId  string             `hidden:"" optional:""`
@@ -166,8 +60,6 @@ type Cli struct {
 	ConfigureCmd DockerConfigureCmd `cmd:"" name:"configure" help:"Configure and save an image with all dependencies and environment baked in. Updates themes and precompiles all assets."`
 	MigrateCmd   DockerMigrateCmd   `cmd:"" name:"migrate" help:"Run migration tasks on an image."`
 	BootstrapCmd DockerBootstrapCmd `cmd:"" name:"bootstrap" help:"Build, migrate, and configure an image"`
-	//TODO: what do we do with clean command? how do we better export docker/compose stuff?
-	Clean        CleanCmd           `cmd:"" name:"old-clean" help:"clean generated files for config"`
 
 	DestroyCmd DestroyCmd `cmd:"" name:"destroy" help:"shutdown and destroy container"`
 	LogsCmd    LogsCmd    `cmd:"" name:"logs" help:"print logs for container"`
@@ -175,7 +67,7 @@ type Cli struct {
 	EnterCmd   EnterCmd   `cmd:"" name:"enter" help:"enter container"`
 	RunCmd     RunCmd     `cmd:"" name:"run" help:"runs command in docker container"`
 	StartCmd   StartCmd   `cmd:"" name:"start" help:"starts container"`
-	StopCmd   StopCmd   `cmd:"" name:"stop" help:"stops container"`
+	StopCmd    StopCmd    `cmd:"" name:"stop" help:"stops container"`
 	RestartCmd RestartCmd `cmd:"" name:"restart" help:"restarts container"`
 	RebuildCmd RebuildCmd `cmd:"" name:"rebuild" help:"rebuilds container"`
 }

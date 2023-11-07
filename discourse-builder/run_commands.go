@@ -13,7 +13,6 @@ import (
 	"strings"
 )
 
-// TODO: figure out if we still need mac address??
 type StartCmd struct {
 	Config     string `arg:"" name:"config" help:"config"`
 	DryRun     bool   `name:"dry-run" short:"n" help:"print start command only"`
