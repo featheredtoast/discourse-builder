@@ -151,6 +151,7 @@ func (r *DockerPupsRunner) Run() error {
 		ContainerId: r.ContainerId,
 		Cmd:         commands,
 		Stdin:       strings.NewReader(r.Config.Yaml()),
+		SkipPorts:   true, //pups runs don't need to expose ports
 	}
 
 	if err := runner.Run(); err != nil {

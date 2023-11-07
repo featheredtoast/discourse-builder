@@ -149,7 +149,9 @@ var _ = Describe("Main", func() {
 			Expect(cmd.Cmd.String()).To(ContainSubstring("--env DISCOURSE_DEVELOPER_EMAILS"))
 			// we commit, we need the container to stick around after it is stopped.
 			Expect(cmd.Cmd.String()).ToNot(ContainSubstring("--rm"))
-			Expect(cmd.Cmd.String()).To(ContainSubstring("-p 80"))
+
+			// we don't expose ports on configure command
+			Expect(cmd.Cmd.String()).ToNot(ContainSubstring("-p 80"))
 			Expect(cmd.Cmd.Env).To(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
 			buf := new(strings.Builder)
 			io.Copy(buf, cmd.Cmd.Stdin)
