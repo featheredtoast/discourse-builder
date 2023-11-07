@@ -24,6 +24,11 @@ func (r *FakeCmdRunner) Run() error {
 	return nil
 }
 
+func (r *FakeCmdRunner) Output() ([]byte, error) {
+	r.RunCalls <- 1
+	return []byte{}, nil
+}
+
 // Swap out CmdRunner with a fake instance that also returns created ICmdRunners on a channel
 // so tests can inspect commands the moment they're run
 func CreateNewFakeCmdRunner(c chan utils.ICmdRunner) func(cmd *exec.Cmd) utils.ICmdRunner {

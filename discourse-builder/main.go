@@ -161,7 +161,12 @@ type Cli struct {
 	ConfigureCmd DockerConfigureCmd `cmd:"" name:"configure" help:"Configure and save an image with all dependencies and environment baked in. Updates themes and precompiles all assets."`
 	MigrateCmd   DockerMigrateCmd   `cmd:"" name:"migrate" help:"Run migration tasks on an image."`
 	BootstrapCmd DockerBootstrapCmd `cmd:"" name:"bootstrap" help:"Build, migrate, and configure an image"`
-	Clean        CleanCmd           `cmd:"" name:"clean" help:"clean generated files for config"`
+	Clean        CleanCmd           `cmd:"" name:"old-clean" help:"clean generated files for config"`
+
+	DestroyCmd DestroyCmd `cmd:"" name:"destroy" help:"shutdown and destroy container"`
+	LogsCmd    LogsCmd    `cmd:"" name:"logs" help:"print logs for container"`
+	CleanupCmd CleanupCmd `cmd:"" name:"cleanup" help:"cleanup containers"`
+	EnterCmd   EnterCmd   `cmd:"" name:"enter" help:"enter container"`
 }
 
 func main() {

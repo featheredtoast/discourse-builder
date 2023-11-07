@@ -6,6 +6,7 @@ import (
 
 type ICmdRunner interface {
 	Run() error
+	Output() ([]byte, error)
 }
 
 type ExecCmdRunner struct {
@@ -14,6 +15,10 @@ type ExecCmdRunner struct {
 
 func (r *ExecCmdRunner) Run() error {
 	return r.Cmd.Run()
+}
+
+func (r *ExecCmdRunner) Output() ([]byte, error) {
+	return r.Cmd.Output()
 }
 
 func NewExecCmdRunner(cmd *exec.Cmd) ICmdRunner {
