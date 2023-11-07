@@ -116,7 +116,7 @@ type StopCmd struct {
 func (r *StopCmd) Run(cli *Cli, ctx *context.Context) error {
 	exists, _ := docker.ContainerExists(r.Config)
 	if !exists {
-		fmt.Println(r.Config + "was not found")
+		fmt.Println(r.Config + " was not found")
 		return nil
 	}
 	cmd := exec.CommandContext(*ctx, "docker", "stop", "-t", "600", r.Config)
@@ -152,7 +152,7 @@ type DestroyCmd struct {
 func (r *DestroyCmd) Run(cli *Cli, ctx *context.Context) error {
 	exists, _ := docker.ContainerExists(r.Config)
 	if !exists {
-		fmt.Println(r.Config + "was not found")
+		fmt.Println(r.Config + " was not found")
 		return nil
 	}
 
