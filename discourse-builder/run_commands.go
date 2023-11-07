@@ -21,7 +21,6 @@ type StartCmd struct {
 	Supervised bool   `name:"supervised" help:"Supervised run"`
 }
 
-// TODO: commands started here cannot be stopped unless forced???
 func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 	//start stopped container first if exists
 	running, _ := docker.ContainerRunning(r.Config)
