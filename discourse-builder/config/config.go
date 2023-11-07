@@ -243,7 +243,7 @@ func (config *Config) Dockerfile(pupsArgs string, bakeEnv bool) string {
 	builder.WriteString("RUN " +
 		"cat /temp-config.yaml | /usr/local/bin/pups " + pupsArgs + " --stdin " +
 		"&& rm /temp-config.yaml\n")
-	builder.WriteString("CMD " + config.BootCommand())
+	builder.WriteString("CMD [\"" + config.BootCommand()+"\"]")
 	return builder.String()
 }
 

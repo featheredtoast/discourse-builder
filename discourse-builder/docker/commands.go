@@ -202,7 +202,7 @@ func (r *DockerPupsRunner) Run() error {
 			"--change",
 			"LABEL org.opencontainers.image.created=\""+time.Now().Format(time.RFC3339)+"\"",
 			"--change",
-			"CMD "+r.Config.BootCommand(),
+			"CMD [\"" + r.Config.BootCommand()+"\"]",
 			r.ContainerId,
 			utils.BaseImageName+r.Config.Name,
 		)

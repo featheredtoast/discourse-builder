@@ -167,7 +167,7 @@ var _ = Describe("Main", func() {
 			// commit on configure
 			cmd = getLastCommand()
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker commit"))
-			Expect(cmd.Cmd.String()).To(ContainSubstring("--change CMD /sbin/boot"))
+			Expect(cmd.Cmd.String()).To(ContainSubstring("--change CMD [\"/sbin/boot\"]"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("discourse-build"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("local_discourse/test"))
 			Expect(cmd.Cmd.Env).ToNot(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
@@ -182,7 +182,6 @@ var _ = Describe("Main", func() {
 			utils.CmdRunner = CreateNewFakeCmdRunner(CmdCreatorWatcher)
 		})
 		AfterEach(func() {
-			close(CmdCreatorWatcher)
 		})
 
 		It("Should run docker build with correct arguments", func() {
