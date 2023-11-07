@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/alecthomas/kong"
 	"github.com/discourse/discourse_docker/discourse-builder/config"
+	"github.com/discourse/discourse_docker/discourse-builder/docker"
 	"github.com/discourse/discourse_docker/discourse-builder/utils"
 	"github.com/google/uuid"
 	"golang.org/x/sys/unix"
@@ -45,7 +46,7 @@ func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
 	}
 
 	pupsArgs := "--skip-tags=precompile,migrate,db"
-	builder := DockerBuilder{
+	builder := docker.DockerBuilder{
 		Config: config,
 		Ctx:    ctx,
 		Stdin:  strings.NewReader(config.Dockerfile(pupsArgs, r.BakeEnv)),
@@ -69,7 +70,7 @@ func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
-	pups := DockerPupsRunner{
+	pups := docker.DockerPupsRunner{
 		Config:         config,
 		PupsArgs:       "--tags=db,precompile",
 		SavedImageName: utils.BaseImageName + r.Config,
@@ -89,7 +90,7 @@ func (r *DockerMigrateCmd) Run(cli *Cli, ctx *context.Context) error {
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
-	pups := DockerPupsRunner{
+	pups := docker.DockerPupsRunner{
 		Config:      config,
 		PupsArgs:    "--tags=db,migrate",
 		SkipEmber:   true,

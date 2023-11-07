@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	ddocker "github.com/discourse/discourse_docker/discourse-builder"
+	"github.com/discourse/discourse_docker/discourse-builder/utils"
 	"io"
 	"os"
 	"os/exec"
@@ -25,8 +26,8 @@ func (r *FakeCmdRunner) Run() error {
 
 // Swap out CmdRunner with a fake instance that also returns created ICmdRunners on a channel
 // so tests can inspect commands the moment they're run
-func CreateNewFakeCmdRunner(c chan ddocker.ICmdRunner) func(cmd *exec.Cmd) ddocker.ICmdRunner {
-	return func(cmd *exec.Cmd) ddocker.ICmdRunner {
+func CreateNewFakeCmdRunner(c chan utils.ICmdRunner) func(cmd *exec.Cmd) utils.ICmdRunner {
+	return func(cmd *exec.Cmd) utils.ICmdRunner {
 		cmdRunner := &FakeCmdRunner{Cmd: cmd, RunCalls: make(chan int)}
 		c <- cmdRunner
 		return cmdRunner
@@ -106,7 +107,7 @@ var _ = Describe("Main", func() {
 
 	Context("When running docker commands", func() {
 
-		var CmdCreatorWatcher chan ddocker.ICmdRunner
+		var CmdCreatorWatcher chan utils.ICmdRunner
 		var getLastCommand = func() *FakeCmdRunner {
 			icmd := <-CmdCreatorWatcher
 			cmd, _ := icmd.(*FakeCmdRunner)
@@ -172,8 +173,8 @@ var _ = Describe("Main", func() {
 		}
 
 		BeforeEach(func() {
-			CmdCreatorWatcher = make(chan ddocker.ICmdRunner)
-			ddocker.CmdRunner = CreateNewFakeCmdRunner(CmdCreatorWatcher)
+			CmdCreatorWatcher = make(chan utils.ICmdRunner)
+			utils.CmdRunner = CreateNewFakeCmdRunner(CmdCreatorWatcher)
 		})
 		AfterEach(func() {
 			close(CmdCreatorWatcher)

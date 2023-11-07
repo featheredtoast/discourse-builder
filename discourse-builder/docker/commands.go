@@ -1,4 +1,4 @@
-package main
+package docker
 
 import (
 	"context"
@@ -45,7 +45,7 @@ func (r *DockerBuilder) Run() error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = r.Stdin
-	if err := CmdRunner(cmd).Run(); err != nil {
+	if err := utils.CmdRunner(cmd).Run(); err != nil {
 		return err
 	}
 	return nil
@@ -116,7 +116,7 @@ func (r *DockerRunner) Run() error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = r.Stdin
-	if err := CmdRunner(cmd).Run(); err != nil {
+	if err := utils.CmdRunner(cmd).Run(); err != nil {
 		return err
 	}
 	return nil
@@ -170,7 +170,7 @@ func (r *DockerPupsRunner) Run() error {
 		)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		if err := CmdRunner(cmd).Run(); err != nil {
+		if err := utils.CmdRunner(cmd).Run(); err != nil {
 			return err
 		}
 
@@ -178,7 +178,7 @@ func (r *DockerPupsRunner) Run() error {
 		runCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		cmd = exec.CommandContext(runCtx, "docker", "rm", "-f", r.ContainerId)
-		CmdRunner(cmd).Run()
+		utils.CmdRunner(cmd).Run()
 	}
 	return nil
 }
