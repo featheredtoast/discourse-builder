@@ -24,12 +24,12 @@ type StartCmd struct {
 func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 	//start stopped container first if exists
 	running, _ := docker.ContainerRunning(r.Config)
-	if running {
+	if running && !r.DryRun {
 		fmt.Println("Nothing to do, your container has already started!")
 		return nil
 	}
 	exists, _ := docker.ContainerExists(r.Config)
-	if exists {
+	if exists && !r.DryRun {
 		fmt.Println("starting up existing container")
 		cmd := exec.CommandContext(*ctx, "docker", "start", r.Config)
 		fmt.Println(cmd)

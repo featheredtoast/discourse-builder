@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"dario.cat/mergo"
 	"errors"
+	"fmt"
 	"github.com/Wing924/shellwords"
 	"github.com/discourse/discourse_docker/discourse-builder/utils"
 	"os"
@@ -97,6 +98,13 @@ func LoadConfig(dir string, configName string, includeTemplates bool, templatesD
 		Boot_Command: DefaultBootCommand,
 		Base_Image:   DefaultBaseImage(),
 	}
+	matched, _ := regexp.MatchString("[[:upper:]/ !@#$%^&*()+~`=]", configName)
+	if matched {
+		msg := "ERROR: Config name '" + configName + "' must not contain upper case characters, spaces or special characters. Correct config name and rerun."
+		fmt.Println(msg)
+		return nil, errors.New(msg)
+	}
+
 	content, err := os.ReadFile(string(strings.TrimRight(dir, "/") + "/" + config.Name + ".yml"))
 	if err != nil {
 		return nil, err
@@ -243,7 +251,7 @@ func (config *Config) Dockerfile(pupsArgs string, bakeEnv bool) string {
 	builder.WriteString("RUN " +
 		"cat /temp-config.yaml | /usr/local/bin/pups " + pupsArgs + " --stdin " +
 		"&& rm /temp-config.yaml\n")
-	builder.WriteString("CMD [\"" + config.BootCommand()+"\"]")
+	builder.WriteString("CMD [\"" + config.BootCommand() + "\"]")
 	return builder.String()
 }
 
