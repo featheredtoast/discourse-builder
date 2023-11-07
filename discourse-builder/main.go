@@ -154,7 +154,7 @@ type Cli struct {
 	OutputDir    string             `short:"o" default:"./tmp" help:"parent output folder"`
 	ContainerId  string             `hidden:"" optional:""`
 	ForceMkdir   bool               `short:"p" name:"parent-dirs" help:"Create intermediate output directories as required.  If this option is not specified, the full path prefix of each operand must already exist."`
-	CliGenerate  CliGenerate        `cmd:"" alias:"g" name:"generate" help:"generate commands"`
+	CliGenerate  CliGenerate        `cmd:"" name:"generate" help:"generate commands"`
 	RawYaml      RawYamlCmd         `cmd:"" name:"raw-yaml" help:"Print raw config, concatenated in pups format"`
 	BuildCmd     DockerBuildCmd     `cmd:"" name:"build" help:"Build a base image with no dependencies."`
 	ConfigureCmd DockerConfigureCmd `cmd:"" name:"configure" help:"Configure and save an image with all dependencies and environment baked in. Updates themes and precompiles all assets."`
