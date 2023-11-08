@@ -87,6 +87,7 @@ func (r *DockerRunner) Run() error {
 	cmd.Env = r.Config.EnvArray(true)
 
 	if r.DryRun {
+		// multi-line env doesn't work super great from CLI, but we can print out the rest.
 		for k, v := range r.Config.Env {
 			if !strings.Contains(v, "\n") {
 				cmd.Args = append(cmd.Args, "--env")
