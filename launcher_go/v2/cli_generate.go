@@ -15,13 +15,13 @@ import (
  */
 
 type CliGenerate struct {
-	DockerCompose DockerComposeCmd `cmd:"" name:"compose" help:"Create docker compose setup in the output directory/{config}. The builder generates a docker-compose.yaml, Dockerfile, config.yaml, and an env file for you to source .envrc. Run with 'source .envrc; docker compose up'."`
+	DockerCompose DockerComposeCmd `cmd:"" name:"compose" help:"Create docker compose setup in the output {output-directory}/{config}/. The builder generates a docker-compose.yaml, Dockerfile, config.yaml, and an env file for you to source .envrc. Run with 'source .envrc; docker compose up'."`
 	DockerArgs    DockerArgsCmd    `cmd:"" name:"docker-args" help:"Print docker run args."`
 	RawYaml       RawYamlCmd       `cmd:"" name:"raw-yaml" help:"Print raw config, concatenated in pups format."`
 }
 
 type RawYamlCmd struct {
-	Config string `arg:"" name:"config" help:"config"`
+	Config string `arg:"" name:"config" help:"config" predictor:"config"`
 }
 
 func (r *RawYamlCmd) Run(cli *Cli) error {
@@ -34,10 +34,10 @@ func (r *RawYamlCmd) Run(cli *Cli) error {
 }
 
 type DockerComposeCmd struct {
-	OutputDir string `name:"output dir" default:"./compose" short:"o" help:"Output dir for docker compose files."`
+	OutputDir string `name:"output dir" default:"./compose" short:"o" help:"Output dir for docker compose files." predictor:"dir"`
 	BakeEnv bool `short:"e" help:"Bake in the configured environment to image after build."`
 
-	Config string `arg:"" name:"config" help:"config"`
+	Config string `arg:"" name:"config" help:"config" predictor:"config"`
 }
 
 func (r *DockerComposeCmd) Run(cli *Cli, ctx *context.Context) error {
@@ -62,7 +62,7 @@ func (r *DockerComposeCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type DockerArgsCmd struct {
-	Config       string `arg:"" name:"config" help:"config"`
+	Config       string `arg:"" name:"config" help:"config" predictor:"config"`
 	Type         string `default:"args" enum:"args,run-image,boot-command,hostname" help:"The type of run arg - args, run-image, boot-command, hostname."`
 	IncludePorts bool   `default:"true" name:"include-ports" negatable:"" help:"Include ports in run args."`
 }

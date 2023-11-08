@@ -26,7 +26,7 @@ import (
  */
 
 type StartCmd struct {
-	Config     string `arg:"" name:"config" help:"config"`
+	Config     string `arg:"" name:"config" help:"config" predictor:"config"`
 	DryRun     bool   `name:"dry-run" short:"n" help:"Do not start, print docker start command and exit."`
 	DockerArgs string `name:"docker-args" help:"Extra arguments to pass when running docker."`
 	RunImage   string `name:"run-image" help:"Start with a custom image."`
@@ -87,7 +87,7 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 type RunCmd struct {
 	RunImage   string   `name:"run-image" help:"Override the image used for running the container."`
 	DockerArgs string   `name:"docker-args" help:"Extra arguments to pass when running docker"`
-	Config     string   `arg:"" name:"config" help:"config"`
+	Config     string   `arg:"" name:"config" help:"config" predictor:"config"`
 	Cmd        []string `arg:"" help:"command to run" passthrough:""`
 }
 
@@ -111,7 +111,7 @@ func (r *RunCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type StopCmd struct {
-	Config string `arg:"" name:"config" help:"config"`
+	Config string `arg:"" name:"config" help:"config" predictor:"config"`
 }
 
 func (r *StopCmd) Run(cli *Cli, ctx *context.Context) error {
@@ -129,7 +129,7 @@ func (r *StopCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type RestartCmd struct {
-	Config     string `arg:"" name:"config" help:"config"`
+	Config     string `arg:"" name:"config" help:"config" predictor:"config"`
 	DockerArgs string `name:"docker-args" help:"Extra arguments to pass when running docker."`
 	RunImage   string `name:"run-image" help:"Override the image used for running the container."`
 }
@@ -147,7 +147,7 @@ func (r *RestartCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type DestroyCmd struct {
-	Config string `arg:"" name:"config" help:"config"`
+	Config string `arg:"" name:"config" help:"config" predictor:"config"`
 }
 
 func (r *DestroyCmd) Run(cli *Cli, ctx *context.Context) error {
@@ -171,7 +171,7 @@ func (r *DestroyCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type EnterCmd struct {
-	Config string `arg:"" name:"config" help:"config"`
+	Config string `arg:"" name:"config" help:"config" predictor:"config"`
 }
 
 func (r *EnterCmd) Run(cli *Cli, ctx *context.Context) error {
@@ -186,7 +186,7 @@ func (r *EnterCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type LogsCmd struct {
-	Config string `arg:"" name:"config" help:"config"`
+	Config string `arg:"" name:"config" help:"config" predictor:"config"`
 }
 
 func (r *LogsCmd) Run(cli *Cli, ctx *context.Context) error {
@@ -200,7 +200,7 @@ func (r *LogsCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type RebuildCmd struct {
-	Config    string `arg:"" name:"config" help:"config"`
+	Config    string `arg:"" name:"config" help:"config" predictor:"config"`
 	FullBuild bool   `name:"full-build" help:"Run a full build image even when migrate on boot and precompile on boot are present in the config."`
 }
 

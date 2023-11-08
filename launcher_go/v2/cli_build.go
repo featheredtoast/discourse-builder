@@ -21,7 +21,7 @@ type DockerBuildCmd struct {
 	BakeEnv bool   `short:"e" help:"Bake in the configured environment to image after build."`
 	Tag     string `default:"latest" help:"Resulting image tag."`
 
-	Config string `arg:"" name:"config" help:"configuration"`
+	Config string `arg:"" name:"config" help:"configuration" predictor:"config"`
 }
 
 func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
@@ -63,7 +63,7 @@ func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
 
 type DockerConfigureCmd struct {
 	Tag    string `default:"latest" help:"Resulting image tag."`
-	Config string `arg:"" name:"config" help:"config"`
+	Config string `arg:"" name:"config" help:"config" predictor:"config"`
 }
 
 func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
@@ -85,7 +85,7 @@ func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type DockerMigrateCmd struct {
-	Config string `arg:"" name:"config" help:"config"`
+	Config string `arg:"" name:"config" help:"config" predictor:"config"`
 }
 
 func (r *DockerMigrateCmd) Run(cli *Cli, ctx *context.Context) error {
@@ -105,7 +105,7 @@ func (r *DockerMigrateCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type DockerBootstrapCmd struct {
-	Config string `arg:"" name:"config" help:"config"`
+	Config string `arg:"" name:"config" help:"config" predictor:"config"`
 }
 
 func (r *DockerBootstrapCmd) Run(cli *Cli, ctx *context.Context) error {
@@ -125,7 +125,7 @@ func (r *DockerBootstrapCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type CleanCmd struct {
-	Config string `arg:"" name:"config" help:"config to clean"`
+	Config string `arg:"" name:"config" help:"config to clean" predictor:"config"`
 }
 
 func (r *CleanCmd) Run(cli *Cli) error {
