@@ -20,3 +20,4 @@ No debug. Under the hood, launcher2 uses docker build which does not allow image
 * Individual build, configure, and migrate commands. Adds the ability to partially build up an image "offline" without taking down an image until what is absolutely necessary, saving downtime.
 * Adds the ability to build and run an image that finishes a build on boot, allowing the server to display a build page.
 * Multiline env support
+* docker compose generation. Allows exporting of configuration from discourse's pups configuration to a docker compose configuration.
