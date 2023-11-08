@@ -16,9 +16,9 @@ var Out io.Writer = os.Stdout
 // TODO file permissions on output probably better set 640
 // TODO dry run start output now needs to be substituted with env so it can be run outside? right now env is --env ENV rather than --env ENV=VAL
 type Cli struct {
-	ConfDir      string             `short:"c" default:"./containers" help:"pups config directory"`
-	TemplatesDir string             `short:"t" default:"." help:"parent directory containing a templates/ directory with pups yaml templates"`
-	BuildDir     string             `default:"./tmp" help:"temporary build folder for building images"`
+	ConfDir      string             `short:"c" default:"./containers" help:"Pups config directory."`
+	TemplatesDir string             `short:"t" default:"." help:"Parent directory containing a templates/ directory with pups yaml templates."`
+	BuildDir     string             `default:"./tmp" help:"Temporary build folder for building images."`
 	ForceMkdir   bool               `short:"p" name:"parent-dirs" help:"Create intermediate output directories as required.  If this option is not specified, the full path prefix of each operand must already exist."`
 	CliGenerate  CliGenerate        `cmd:"" name:"generate" help:"Generate commands, used to generate Discourse pups configuration for external use."`
 	BuildCmd     DockerBuildCmd     `cmd:"" name:"build" help:"Build a base image with no dependencies."`
@@ -29,12 +29,12 @@ type Cli struct {
 	DestroyCmd DestroyCmd `cmd:"" name:"destroy" help:"Shutdown and destroy container."`
 	LogsCmd    LogsCmd    `cmd:"" name:"logs" help:"Print logs for container."`
 	CleanupCmd CleanupCmd `cmd:"" name:"cleanup" help:"Cleanup unused containers."`
-	EnterCmd   EnterCmd   `cmd:"" name:"enter" help:"Enter container."`
-	RunCmd     RunCmd     `cmd:"" name:"run" help:"Runs command in docker container"`
-	StartCmd   StartCmd   `cmd:"" name:"start" help:"starts container"`
-	StopCmd    StopCmd    `cmd:"" name:"stop" help:"stops container"`
-	RestartCmd RestartCmd `cmd:"" name:"restart" help:"restarts container"`
-	RebuildCmd RebuildCmd `cmd:"" name:"rebuild" help:"rebuilds container"`
+	EnterCmd   EnterCmd   `cmd:"" name:"enter" help:"Connects to a shell running in the container."`
+	RunCmd     RunCmd     `cmd:"" name:"run" help:"Runs the specified command in context of a docker container."`
+	StartCmd   StartCmd   `cmd:"" name:"start" help:"Starts container."`
+	StopCmd    StopCmd    `cmd:"" name:"stop" help:"Stops container."`
+	RestartCmd RestartCmd `cmd:"" name:"restart" help:"Stops then starts container."`
+	RebuildCmd RebuildCmd `cmd:"" name:"rebuild" help:"Builds new image, then destroys old container, and starts new container. If PRECOMPILE_ON_BOOT and MIGRATE_ON_BOOT are set in the config, it will start up the container without running migrate and configure steps."`
 }
 
 func main() {

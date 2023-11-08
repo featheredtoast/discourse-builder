@@ -15,9 +15,9 @@ import (
  */
 
 type CliGenerate struct {
-	DockerCompose DockerComposeCmd `cmd:"" name:"docker-compose" help:"Create docker compose setup. The builder also generates an env file for you to source {conf}.env to handle multiline environment vars before running docker compose build"`
-	DockerArgs    DockerArgsCmd    `cmd:"" name:"docker-args" help:"Generate docker run args"`
-	RawYaml RawYamlCmd `cmd:"" name:"raw-yaml" help:"Print raw config, concatenated in pups format"`
+	DockerCompose DockerComposeCmd `cmd:"" name:"compose" help:"Create docker compose setup in the output directory/{config}. The builder generates a docker-compose.yaml, Dockerfile, config.yaml, and an env file for you to source .envrc. Run with 'source .envrc; docker compose up'."`
+	DockerArgs    DockerArgsCmd    `cmd:"" name:"docker-args" help:"Print docker run args."`
+	RawYaml       RawYamlCmd       `cmd:"" name:"raw-yaml" help:"Print raw config, concatenated in pups format."`
 }
 
 type RawYamlCmd struct {
@@ -33,9 +33,9 @@ func (r *RawYamlCmd) Run(cli *Cli) error {
 	return nil
 }
 
-
 type DockerComposeCmd struct {
-	OutputDir string `name:"output dir" default:"./compose" short:"o" help:"output dir for the environment"`
+	OutputDir string `name:"output dir" default:"./compose" short:"o" help:"Output dir for docker compose files."`
+	BakeEnv bool `short:"e" help:"Bake in the configured environment to image after build."`
 
 	Config string `arg:"" name:"config" help:"config"`
 }
@@ -55,7 +55,7 @@ func (r *DockerComposeCmd) Run(cli *Cli, ctx *context.Context) error {
 			return err
 		}
 	}
-	if err := config.WriteDockerCompose(dir, false); err != nil {
+	if err := config.WriteDockerCompose(dir, r.BakeEnv); err != nil {
 		return err
 	}
 	return nil
@@ -63,8 +63,8 @@ func (r *DockerComposeCmd) Run(cli *Cli, ctx *context.Context) error {
 
 type DockerArgsCmd struct {
 	Config       string `arg:"" name:"config" help:"config"`
-	Type         string `default:"args" enum:"args,run-image,boot-command,hostname" help:"the type of run arg - args, run-image, boot-command, hostname"`
-	IncludePorts bool   `default:"true" name:"include-ports" negatable:"" help:"include ports in run args"`
+	Type         string `default:"args" enum:"args,run-image,boot-command,hostname" help:"The type of run arg - args, run-image, boot-command, hostname."`
+	IncludePorts bool   `default:"true" name:"include-ports" negatable:"" help:"Include ports in run args."`
 }
 
 func (r *DockerArgsCmd) Run(cli *Cli) error {
