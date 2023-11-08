@@ -6,6 +6,7 @@ import (
 	"github.com/discourse/discourse_docker/discourse-builder/config"
 	"github.com/discourse/discourse_docker/discourse-builder/docker"
 	"github.com/discourse/discourse_docker/discourse-builder/utils"
+	"github.com/google/uuid"
 	"os"
 	"strings"
 )
@@ -67,13 +68,15 @@ func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
+
+	containerId := "discourse-build-" + uuid.NewString()
 	pups := docker.DockerPupsRunner{
 		Config:         config,
 		PupsArgs:       "--tags=db,precompile",
 		SavedImageName: utils.BaseImageName + r.Config,
 		SkipEmber:      true,
 		Ctx:            ctx,
-		ContainerId:    cli.ContainerId,
+		ContainerId:    containerId,
 	}
 	return pups.Run()
 }
@@ -87,12 +90,13 @@ func (r *DockerMigrateCmd) Run(cli *Cli, ctx *context.Context) error {
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
+	containerId := "discourse-build-" + uuid.NewString()
 	pups := docker.DockerPupsRunner{
 		Config:      config,
 		PupsArgs:    "--tags=db,migrate",
 		SkipEmber:   true,
 		Ctx:         ctx,
-		ContainerId: cli.ContainerId,
+		ContainerId: containerId,
 	}
 	return pups.Run()
 }

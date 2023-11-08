@@ -57,7 +57,6 @@ var _ = Describe("Main", func() {
 			ConfDir:      "./test/containers",
 			TemplatesDir: "./test",
 			BuildDir:     testDir,
-			ContainerId:  "discourse-build-asdf",
 		}
 	})
 	AfterEach(func() {
