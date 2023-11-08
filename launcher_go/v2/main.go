@@ -57,6 +57,7 @@ func main() {
 	)
 
 	ctx, err := parser.Parse(os.Args[1:])
+	parser.FatalIfErrorf(err)
 
 	defer cancel()
 	sigChan := make(chan os.Signal, 1)
