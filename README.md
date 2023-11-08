@@ -1,14 +1,22 @@
-# Discourse builder
+# Launcher2
 
-Build and run discourse images
+Build and run discourse images.
 
-No prereqs are run yet.
+## Changes from launcher
+
+No prereqs are check yet. It assumes you have docker set up and whatever minimum requirements setup for Discourse: namely a recent enough version of docker, git.
 
 ## Migration from launcher
+
+Some things are not yet implemented from launcher1.
 
 `DOCKER_HOST_IP` - container can use `host.docker.internal`
 stable `mac-address` - not implemented
 
-debug:
+No debug. Under the hood, launcher2 uses docker build which does not allow images to be saved along the way.
 
-Implement checks for uppercase or special characters in config
+## New features
+
+* Individual build, configure, and migrate commands. Adds the ability to partially build up an image "offline" without taking down an image until what is absolutely necessary, saving downtime.
+* Adds the ability to build and run an image that finishes a build on boot, allowing the server to display a build page.
+* Multiline env support
