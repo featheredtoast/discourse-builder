@@ -15,13 +15,17 @@ import (
 )
 
 type DockerBuilder struct {
-	Config *config.Config
-	Ctx    *context.Context
-	Stdin  io.Reader
-	Dir    string
+	Config   *config.Config
+	Ctx      *context.Context
+	Stdin    io.Reader
+	Dir      string
+	ImageTag string
 }
 
 func (r *DockerBuilder) Run() error {
+	if r.ImageTag == "" {
+		r.ImageTag = "latest"
+	}
 	cmd := exec.CommandContext(*r.Ctx, utils.DockerPath, "build")
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd.Cancel = func() error {
@@ -38,7 +42,7 @@ func (r *DockerBuilder) Run() error {
 	cmd.Args = append(cmd.Args, "--pull")
 	cmd.Args = append(cmd.Args, "--force-rm")
 	cmd.Args = append(cmd.Args, "-t")
-	cmd.Args = append(cmd.Args, utils.BaseImageName+r.Config.Name)
+	cmd.Args = append(cmd.Args, utils.BaseImageName+r.Config.Name+":"+r.ImageTag)
 	cmd.Args = append(cmd.Args, "--shm-size=512m")
 	cmd.Args = append(cmd.Args, "-f")
 	cmd.Args = append(cmd.Args, "-")
@@ -175,7 +179,7 @@ func (r *DockerPupsRunner) Run() error {
 		extraEnv = []string{"SKIP_EMBER_CLI_COMPILE=1"}
 	}
 	rm := false
-	if len(r.SavedImageName) <= 0 {
+	if r.SavedImageName == "" {
 		rm = true
 	}
 	commands := []string{"/bin/bash",
@@ -202,9 +206,9 @@ func (r *DockerPupsRunner) Run() error {
 			"--change",
 			"LABEL org.opencontainers.image.created=\""+time.Now().Format(time.RFC3339)+"\"",
 			"--change",
-			"CMD [\"" + r.Config.BootCommand()+"\"]",
+			"CMD [\""+r.Config.BootCommand()+"\"]",
 			r.ContainerId,
-			utils.BaseImageName+r.Config.Name,
+			r.SavedImageName,
 		)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr

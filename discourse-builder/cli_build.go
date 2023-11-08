@@ -18,7 +18,8 @@ import (
  * bootstrap
  */
 type DockerBuildCmd struct {
-	BakeEnv bool `short:"e" help:"Bake in the configured environment to image after build."`
+	BakeEnv bool   `short:"e" help:"Bake in the configured environment to image after build."`
+	Tag     string `default:"latest" help:"Resulting image tag."`
 
 	Config string `arg:"" name:"config" help:"configuration"`
 }
@@ -45,10 +46,11 @@ func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
 
 	pupsArgs := "--skip-tags=precompile,migrate,db"
 	builder := docker.DockerBuilder{
-		Config: config,
-		Ctx:    ctx,
-		Stdin:  strings.NewReader(config.Dockerfile(pupsArgs, r.BakeEnv)),
-		Dir:    dir,
+		Config:   config,
+		Ctx:      ctx,
+		Stdin:    strings.NewReader(config.Dockerfile(pupsArgs, r.BakeEnv)),
+		Dir:      dir,
+		ImageTag: r.Tag,
 	}
 	if err := builder.Run(); err != nil {
 		return err
@@ -60,6 +62,7 @@ func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type DockerConfigureCmd struct {
+	Tag    string `default:"latest" help:"Resulting image tag."`
 	Config string `arg:"" name:"config" help:"config"`
 }
 
@@ -73,7 +76,7 @@ func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
 	pups := docker.DockerPupsRunner{
 		Config:         config,
 		PupsArgs:       "--tags=db,precompile",
-		SavedImageName: utils.BaseImageName + r.Config,
+		SavedImageName: utils.BaseImageName + r.Config + ":" + r.Tag,
 		SkipEmber:      true,
 		Ctx:            ctx,
 		ContainerId:    containerId,
