@@ -80,6 +80,7 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 		Hostname:    hostname,
 		Cmd:         []string{bootCmd},
 	}
+	fmt.Println("starting new container...")
 	return runner.Run()
 }
 
