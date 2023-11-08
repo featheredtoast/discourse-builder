@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"fmt"
+	"github.com/Wing924/shellwords"
 	"github.com/discourse/discourse_docker/discourse-builder/config"
 	"github.com/discourse/discourse_docker/discourse-builder/utils"
 	"golang.org/x/sys/unix"
@@ -84,9 +85,19 @@ func (r *DockerRunner) Run() error {
 		}
 	}
 	cmd.Env = r.Config.EnvArray(true)
-	for k, _ := range r.Config.Env {
-		cmd.Args = append(cmd.Args, "--env")
-		cmd.Args = append(cmd.Args, k)
+
+	if r.DryRun {
+		for k, v := range r.Config.Env {
+			if !strings.Contains(v, "\n") {
+				cmd.Args = append(cmd.Args, "--env")
+				cmd.Args = append(cmd.Args, k+"="+shellwords.Escape(v))
+			}
+		}
+	} else {
+		for k, _ := range r.Config.Env {
+			cmd.Args = append(cmd.Args, "--env")
+			cmd.Args = append(cmd.Args, k)
+		}
 	}
 	for _, e := range r.ExtraEnv {
 		cmd.Args = append(cmd.Args, "--env")

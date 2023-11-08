@@ -13,8 +13,6 @@ import (
 
 var Out io.Writer = os.Stdout
 
-// TODO file permissions on output probably better set 640
-// TODO dry run start output now needs to be substituted with env so it can be run outside? right now env is --env ENV rather than --env ENV=VAL
 type Cli struct {
 	ConfDir      string             `short:"c" default:"./containers" help:"Pups config directory."`
 	TemplatesDir string             `short:"t" default:"." help:"Parent directory containing a templates/ directory with pups yaml templates."`
