@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"errors"
-	"github.com/discourse/discourse_docker/discourse-builder/config"
-	"github.com/discourse/discourse_docker/discourse-builder/docker"
-	"github.com/discourse/discourse_docker/discourse-builder/utils"
+	"github.com/discourse/discourse_docker/launcher_go/v2/config"
+	"github.com/discourse/discourse_docker/launcher_go/v2/docker"
+	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
 	"github.com/google/uuid"
 	"os"
 	"strings"

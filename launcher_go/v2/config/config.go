@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Wing924/shellwords"
-	"github.com/discourse/discourse_docker/discourse-builder/utils"
+	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
 	"os"
 	"regexp"
 	"runtime"

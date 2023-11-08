@@ -6,8 +6,8 @@ import (
 
 	"bytes"
 	"context"
-	ddocker "github.com/discourse/discourse_docker/discourse-builder"
-	"github.com/discourse/discourse_docker/discourse-builder/utils"
+	ddocker "github.com/discourse/discourse_docker/launcher_go/v2"
+	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
 	"io"
 	"os"
 	"os/exec"

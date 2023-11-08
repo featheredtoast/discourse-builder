@@ -3,7 +3,7 @@ default: build
 
 .PHONY: build
 build:
-	go build -o bin/discourse-builder
+	go build -o bin/launcher2
 
 .PHONY: test
 test:

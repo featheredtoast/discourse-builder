@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/discourse/discourse_docker/discourse-builder/config"
+	"github.com/discourse/discourse_docker/launcher_go/v2/config"
 	"os"
 )
 

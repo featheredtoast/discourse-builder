@@ -22,7 +22,7 @@ jobs:
         with:
           go-version: '>=1.21.0'
       - run: go test ./...
-        working-directory: ./discourse-builder
+        working-directory: ./launcher_go/v2
 
   build_latest:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -44,8 +44,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
-          project_path: ./discourse-builder
-          binary_name: discourse-builder
+          project_path: ./launcher_go/v2
+          binary_name: launcher2
           overwrite: true
           release_tag: latest
 
@@ -69,5 +69,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
-          project_path: ./discourse-builder
-          binary_name: discourse-builder
+          project_path: ./launcher_go/v2
+          binary_name: launcher2
