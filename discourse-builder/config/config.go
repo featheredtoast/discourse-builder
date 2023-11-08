@@ -221,7 +221,7 @@ func (config *Config) WriteDockerCompose(dir string, bakeEnv bool) error {
 	if err != nil {
 		return errors.New("error marshalling compose file to write docker-compose.yaml")
 	}
-	if err := os.WriteFile(strings.TrimRight(dir, "/")+"/"+"docker-compose.yaml", yaml, 0666); err != nil {
+	if err := os.WriteFile(strings.TrimRight(dir, "/")+"/"+"docker-compose.yaml", yaml, 0660); err != nil {
 		return errors.New("error writing compose file docker-compose.yaml")
 	}
 	return nil
@@ -233,7 +233,7 @@ func (config *Config) WriteDockerfile(dir string, pupsArgs string, bakeEnv bool)
 	}
 
 	file := strings.TrimRight(dir, "/") + "/" + "Dockerfile"
-	if err := os.WriteFile(file, []byte(config.Dockerfile(pupsArgs, bakeEnv)), 0666); err != nil {
+	if err := os.WriteFile(file, []byte(config.Dockerfile(pupsArgs, bakeEnv)), 0660); err != nil {
 		return errors.New("error writing dockerfile Dockerfile " + file)
 	}
 	return nil
@@ -257,7 +257,7 @@ func (config *Config) Dockerfile(pupsArgs string, bakeEnv bool) string {
 
 func (config *Config) WriteYamlConfig(dir string) error {
 	file := strings.TrimRight(dir, "/") + "/config.yaml"
-	if err := os.WriteFile(file, []byte(config.Yaml()), 0666); err != nil {
+	if err := os.WriteFile(file, []byte(config.Yaml()), 0660); err != nil {
 		return errors.New("error writing config file " + file)
 	}
 	return nil
@@ -265,7 +265,7 @@ func (config *Config) WriteYamlConfig(dir string) error {
 
 func (config *Config) WriteEnvConfig(dir string) error {
 	file := strings.TrimRight(dir, "/") + "/.envrc"
-	if err := os.WriteFile(file, []byte(config.ExportEnv()), 0666); err != nil {
+	if err := os.WriteFile(file, []byte(config.ExportEnv()), 0660); err != nil {
 		return errors.New("error writing export env " + file)
 	}
 	return nil
