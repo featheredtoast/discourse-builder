@@ -27,10 +27,10 @@ import (
 
 type StartCmd struct {
 	Config     string `arg:"" name:"config" help:"config"`
-	DryRun     bool   `name:"dry-run" short:"n" help:"print start command only"`
-	DockerArgs string `name:"docker-args" help:"Extra arguments to pass when running docker"`
-	RunImage   string `name:"run-image" help:"Override the image used for running the container"`
-	Supervised bool   `name:"supervised" help:"Supervised run"`
+	DryRun     bool   `name:"dry-run" short:"n" help:"Do not start, print docker start command and exit."`
+	DockerArgs string `name:"docker-args" help:"Extra arguments to pass when running docker."`
+	RunImage   string `name:"run-image" help:"Start with a custom image."`
+	Supervised bool   `name:"supervised" help:"Attach the running container on start."`
 }
 
 func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
@@ -84,7 +84,7 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type RunCmd struct {
-	RunImage   string   `name:"run-image" help:"Override the image used for running the container"`
+	RunImage   string   `name:"run-image" help:"Override the image used for running the container."`
 	DockerArgs string   `name:"docker-args" help:"Extra arguments to pass when running docker"`
 	Config     string   `arg:"" name:"config" help:"config"`
 	Cmd        []string `arg:"" help:"command to run" passthrough:""`
@@ -129,8 +129,8 @@ func (r *StopCmd) Run(cli *Cli, ctx *context.Context) error {
 
 type RestartCmd struct {
 	Config     string `arg:"" name:"config" help:"config"`
-	DockerArgs string `name:"docker-args" help:"Extra arguments to pass when running docker"`
-	RunImage   string `name:"run-image" help:"Override the image used for running the container"`
+	DockerArgs string `name:"docker-args" help:"Extra arguments to pass when running docker."`
+	RunImage   string `name:"run-image" help:"Override the image used for running the container."`
 }
 
 func (r *RestartCmd) Run(cli *Cli, ctx *context.Context) error {
@@ -200,7 +200,7 @@ func (r *LogsCmd) Run(cli *Cli, ctx *context.Context) error {
 
 type RebuildCmd struct {
 	Config    string `arg:"" name:"config" help:"config"`
-	FullBuild bool   `name:"full-build" help:"full build image even when migrate on boot and precompile on boot is present in the config"`
+	FullBuild bool   `name:"full-build" help:"Run a full build image even when migrate on boot and precompile on boot are present in the config."`
 }
 
 func (r *RebuildCmd) Run(cli *Cli, ctx *context.Context) error {
