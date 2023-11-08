@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// Find config names given the current --conf-dir argument.
+// Find config names for autocomplete, given the current --conf-dir argument.
 func FindConfigNames() []string {
 	compLine := os.Getenv("COMP_LINE")
 	flagLine := []string{}
