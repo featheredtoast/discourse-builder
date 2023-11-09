@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-var _ = Describe("Main", func() {
+var _ = Describe("Build", func() {
 	var testDir string
 	var out *bytes.Buffer
 	var cli *ddocker.Cli
@@ -35,44 +35,6 @@ var _ = Describe("Main", func() {
 	})
 	AfterEach(func() {
 		os.RemoveAll(testDir)
-	})
-
-	It("should allow concatenated templates", func() {
-		runner := ddocker.RawYamlCmd{Config: "test"}
-		runner.Run(cli)
-		Expect(out.String()).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
-		Expect(out.String()).To(ContainSubstring("_FILE_SEPERATOR_"))
-		Expect(out.String()).To(ContainSubstring("version: tests-passed"))
-	})
-
-	It("should output docker compose cmd to config name's subdir", func() {
-		runner := ddocker.DockerComposeCmd{Config: "test",
-			OutputDir: testDir}
-		err := runner.Run(cli, &ctx)
-		Expect(err).To(BeNil())
-		out, err := os.ReadFile(testDir + "/test/config.yaml")
-		Expect(err).To(BeNil())
-		Expect(string(out[:])).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
-	})
-
-	It("does not create output parent folders when not asked", func() {
-		runner := ddocker.DockerComposeCmd{Config: "test",
-			OutputDir: testDir + "/subfolder/sub-subfolder"}
-		err := runner.Run(cli, &ctx)
-		Expect(err).ToNot(BeNil())
-		_, err = os.ReadFile(testDir + "/subfolder/sub-subfolder/test/config.yaml")
-		Expect(err).ToNot(BeNil())
-	})
-
-	It("should force create output parent folders when asked", func() {
-		runner := ddocker.DockerComposeCmd{Config: "test",
-			OutputDir: testDir + "/subfolder/sub-subfolder"}
-		cli.ForceMkdir = true
-		err := runner.Run(cli, &ctx)
-		Expect(err).To(BeNil())
-		out, err := os.ReadFile(testDir + "/subfolder/sub-subfolder/test/config.yaml")
-		Expect(err).To(BeNil())
-		Expect(string(out[:])).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
 	})
 
 	Context("When running build commands", func() {
