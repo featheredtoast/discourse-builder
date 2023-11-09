@@ -36,6 +36,16 @@ func CreateNewFakeCmdRunner(c chan utils.ICmdRunner) func(cmd *exec.Cmd) utils.I
 	}
 }
 
+func CreateNewFakeCmdRunnerWithOutput(c chan utils.ICmdRunner, outputResponse *[]byte) func(cmd *exec.Cmd) utils.ICmdRunner {
+	return func(cmd *exec.Cmd) utils.ICmdRunner {
+		cmdRunner := &FakeCmdRunner{Cmd: cmd,
+			RunCalls:       make(chan int),
+			OutputResponse: outputResponse}
+		c <- cmdRunner
+		return cmdRunner
+	}
+}
+
 var _ = Describe("Main", func() {
 	It("exists", func() {
 		Expect(true).To(BeTrue())

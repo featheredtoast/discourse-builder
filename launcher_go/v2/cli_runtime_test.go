@@ -56,6 +56,23 @@ var _ = Describe("Runtime", func() {
 			Expect(cmd.Cmd.String()).To(ContainSubstring("--name test local_discourse/test /sbin/boot"))
 		}
 
+		var checkStartCmdWhenStarted = func() {
+			cmd := getLastCommand()
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker ps -q --filter name=test"))
+		}
+
+		var checkStopCmd = func() {
+			cmd := getLastCommand()
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker ps -a -q --filter name=test"))
+			cmd = getLastCommand()
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker stop -t 600 test"))
+		}
+
+		var checkStopCmdWhenMissing = func() {
+			cmd := getLastCommand()
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker ps -a -q --filter name=test"))
+		}
+
 		BeforeEach(func() {
 			CmdCreatorWatcher = make(chan utils.ICmdRunner)
 			utils.CmdRunner = CreateNewFakeCmdRunner(CmdCreatorWatcher)
@@ -67,6 +84,36 @@ var _ = Describe("Runtime", func() {
 			runner := ddocker.StartCmd{Config: "test"}
 			go runner.Run(cli, &ctx)
 			checkStartCmd()
+			close(CmdCreatorWatcher)
+		})
+
+		It("should not run stop commands", func() {
+			runner := ddocker.StopCmd{Config: "test"}
+			go runner.Run(cli, &ctx)
+			checkStopCmdWhenMissing()
+			close(CmdCreatorWatcher)
+		})
+
+		Context("with a running container", func() {
+			BeforeEach(func() {
+				//response should be non-empty, indicating a running container
+				response := []byte{123}
+				utils.CmdRunner = CreateNewFakeCmdRunnerWithOutput(CmdCreatorWatcher, &response)
+			})
+
+			It("should not run start commands", func() {
+				runner := ddocker.StartCmd{Config: "test"}
+				go runner.Run(cli, &ctx)
+				checkStartCmdWhenStarted()
+				close(CmdCreatorWatcher)
+			})
+
+			It("should run stop commands", func() {
+				runner := ddocker.StopCmd{Config: "test"}
+				go runner.Run(cli, &ctx)
+				checkStopCmd()
+				close(CmdCreatorWatcher)
+			})
 		})
 
 	})
