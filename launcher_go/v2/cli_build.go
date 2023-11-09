@@ -86,7 +86,7 @@ func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
 
 type DockerMigrateCmd struct {
 	Config                       string `arg:"" name:"config" help:"config" predictor:"config"`
-	SkipPostDeploymentMigrations bool   `help:"Skip post deployment migrations"`
+	SkipPostDeploymentMigrations bool   `help:"Skip post-deployment migrations. Runs safe migrations only. Defers breaking-change migrations. Make sure you run post-deployment migrations after a full deploy is complete if you use this option."`
 }
 
 func (r *DockerMigrateCmd) Run(cli *Cli, ctx *context.Context) error {
