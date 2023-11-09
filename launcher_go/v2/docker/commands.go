@@ -100,6 +100,8 @@ func (r *DockerRunner) Run() error {
 			cmd.Args = append(cmd.Args, k)
 		}
 	}
+
+	// Order is important here, we add extra env after config's env to override anything set in env.
 	for _, e := range r.ExtraEnv {
 		cmd.Args = append(cmd.Args, "--env")
 		cmd.Args = append(cmd.Args, e)
@@ -140,6 +142,8 @@ func (r *DockerRunner) Run() error {
 		cmd.Args = append(cmd.Args, "-d")
 	}
 	cmd.Args = append(cmd.Args, "-i")
+
+	// Docker args override settings above
 	for _, f := range r.Config.DockerArgs() {
 		cmd.Args = append(cmd.Args, f)
 	}
