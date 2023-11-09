@@ -9,8 +9,9 @@ import (
 )
 
 type FakeCmdRunner struct {
-	Cmd      *exec.Cmd
-	RunCalls chan int
+	Cmd            *exec.Cmd
+	RunCalls       chan int
+	OutputResponse *[]byte
 }
 
 func (r *FakeCmdRunner) Run() error {
@@ -20,14 +21,16 @@ func (r *FakeCmdRunner) Run() error {
 
 func (r *FakeCmdRunner) Output() ([]byte, error) {
 	r.RunCalls <- 1
-	return []byte{}, nil
+	return *r.OutputResponse, nil
 }
 
 // Swap out CmdRunner with a fake instance that also returns created ICmdRunners on a channel
 // so tests can inspect commands the moment they're run
 func CreateNewFakeCmdRunner(c chan utils.ICmdRunner) func(cmd *exec.Cmd) utils.ICmdRunner {
 	return func(cmd *exec.Cmd) utils.ICmdRunner {
-		cmdRunner := &FakeCmdRunner{Cmd: cmd, RunCalls: make(chan int)}
+		cmdRunner := &FakeCmdRunner{Cmd: cmd,
+			RunCalls:       make(chan int),
+			OutputResponse: &[]byte{}}
 		c <- cmdRunner
 		return cmdRunner
 	}
