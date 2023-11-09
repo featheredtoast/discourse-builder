@@ -37,14 +37,14 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 	//start stopped container first if exists
 	running, _ := docker.ContainerRunning(r.Config)
 	if running && !r.DryRun {
-		fmt.Println("Nothing to do, your container has already started!")
+		fmt.Fprintln(Out, "Nothing to do, your container has already started!")
 		return nil
 	}
 	exists, _ := docker.ContainerExists(r.Config)
 	if exists && !r.DryRun {
-		fmt.Println("starting up existing container")
+		fmt.Fprintln(Out, "starting up existing container")
 		cmd := exec.CommandContext(*ctx, utils.DockerPath, "start", r.Config)
-		fmt.Println(cmd)
+		fmt.Fprintln(Out, cmd)
 		if err := utils.CmdRunner(cmd).Run(); err != nil {
 			return err
 		}
@@ -80,7 +80,7 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 		Hostname:    hostname,
 		Cmd:         []string{bootCmd},
 	}
-	fmt.Println("starting new container...")
+	fmt.Fprintln(Out, "starting new container...")
 	return runner.Run()
 }
 
@@ -117,11 +117,11 @@ type StopCmd struct {
 func (r *StopCmd) Run(cli *Cli, ctx *context.Context) error {
 	exists, _ := docker.ContainerExists(r.Config)
 	if !exists {
-		fmt.Println(r.Config + " was not found")
+		fmt.Fprintln(Out, r.Config + " was not found")
 		return nil
 	}
 	cmd := exec.CommandContext(*ctx, "docker", "stop", "-t", "600", r.Config)
-	fmt.Println(cmd)
+	fmt.Fprintln(Out, cmd)
 	if err := utils.CmdRunner(cmd).Run(); err != nil {
 		return err
 	}
@@ -153,17 +153,17 @@ type DestroyCmd struct {
 func (r *DestroyCmd) Run(cli *Cli, ctx *context.Context) error {
 	exists, _ := docker.ContainerExists(r.Config)
 	if !exists {
-		fmt.Println(r.Config + " was not found")
+		fmt.Fprintln(Out, r.Config + " was not found")
 		return nil
 	}
 
 	cmd := exec.CommandContext(*ctx, utils.DockerPath, "stop", "-t", "600", r.Config)
-	fmt.Println(cmd)
+	fmt.Fprintln(Out, cmd)
 	if err := utils.CmdRunner(cmd).Run(); err != nil {
 		return err
 	}
 	cmd = exec.CommandContext(*ctx, utils.DockerPath, "rm", r.Config)
-	fmt.Println(cmd)
+	fmt.Fprintln(Out, cmd)
 	if err := utils.CmdRunner(cmd).Run(); err != nil {
 		return err
 	}
@@ -195,7 +195,7 @@ func (r *LogsCmd) Run(cli *Cli, ctx *context.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(output[:]))
+	fmt.Fprintln(Out, string(output[:]))
 	return nil
 }
 
@@ -253,13 +253,13 @@ func (r *CleanupCmd) Run(cli *Cli, ctx *context.Context) error {
 	}
 	_, err := os.Stat("/var/discourse/shared/standalone/postgres_data_old")
 	if !os.IsNotExist(err) {
-		fmt.Println("Old PostgreSQL backup data cluster detected")
-		fmt.Println("Would you like to remove it? (y/N)")
+		fmt.Fprintln(Out, "Old PostgreSQL backup data cluster detected")
+		fmt.Fprintln(Out, "Would you like to remove it? (y/N)")
 		scanner := bufio.NewScanner(os.Stdin)
 		scanner.Scan()
 		reply := scanner.Text()
 		if reply == "y" || reply == "Y" {
-			fmt.Println("removing old PostgreSQL data cluster at /var/discourse/shared/standalone/postgres_data_old...")
+			fmt.Fprintln(Out, "removing old PostgreSQL data cluster at /var/discourse/shared/standalone/postgres_data_old...")
 			os.RemoveAll("/var/discourse/shared/standalone/postgres_data_old")
 		} else {
 			return errors.New("Cancelled")
