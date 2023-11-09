@@ -180,16 +180,12 @@ type DockerPupsRunner struct {
 	Config         *config.Config
 	PupsArgs       string
 	SavedImageName string
-	SkipEmber      bool
+	ExtraEnv       []string
 	Ctx            *context.Context
 	ContainerId    string
 }
 
 func (r *DockerPupsRunner) Run() error {
-	extraEnv := []string{}
-	if r.SkipEmber {
-		extraEnv = []string{"SKIP_EMBER_CLI_COMPILE=1"}
-	}
 	rm := false
 	if r.SavedImageName == "" {
 		rm = true
@@ -200,7 +196,7 @@ func (r *DockerPupsRunner) Run() error {
 
 	runner := DockerRunner{Config: r.Config,
 		Ctx:         r.Ctx,
-		ExtraEnv:    extraEnv,
+		ExtraEnv:    r.ExtraEnv,
 		Rm:          rm,
 		ContainerId: r.ContainerId,
 		Cmd:         commands,

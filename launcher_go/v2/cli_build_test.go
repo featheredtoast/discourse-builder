@@ -61,12 +61,14 @@ var _ = Describe("Build", func() {
 			// docker build's stdin is a dockerfile
 			Expect(buf.String()).To(ContainSubstring("COPY config.yaml /temp-config.yaml"))
 			Expect(buf.String()).To(ContainSubstring("--skip-tags=precompile,migrate,db"))
+			Expect(buf.String()).ToNot(ContainSubstring("SKIP_EMBER_CLI_COMPILE=1"))
 		}
 
 		var checkMigrateCmd = func() {
 			cmd := getLastCommand()
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("--env DISCOURSE_DEVELOPER_EMAILS"))
+			Expect(cmd.Cmd.String()).To(ContainSubstring("--env SKIP_EMBER_CLI_COMPILE=1"))
 			// no commit after, we expect an --rm as the container isn't needed after it is stopped
 			Expect(cmd.Cmd.String()).To(ContainSubstring("--rm"))
 			Expect(cmd.Cmd.Env).To(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
@@ -80,6 +82,7 @@ var _ = Describe("Build", func() {
 			cmd := getLastCommand()
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("--env DISCOURSE_DEVELOPER_EMAILS"))
+			Expect(cmd.Cmd.String()).To(ContainSubstring("--env SKIP_EMBER_CLI_COMPILE=1"))
 			// we commit, we need the container to stick around after it is stopped.
 			Expect(cmd.Cmd.String()).ToNot(ContainSubstring("--rm"))
 
@@ -121,6 +124,23 @@ var _ = Describe("Build", func() {
 			runner := ddocker.DockerMigrateCmd{Config: "test"}
 			go runner.Run(cli, &ctx)
 			checkMigrateCmd()
+		})
+
+		It("Should allow skip post deployment migrations", func() {
+			runner := ddocker.DockerMigrateCmd{Config: "test", SkipPostDeploymentMigrations: true}
+			go runner.Run(cli, &ctx)
+			cmd := getLastCommand()
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
+			Expect(cmd.Cmd.String()).To(ContainSubstring("--env DISCOURSE_DEVELOPER_EMAILS"))
+			Expect(cmd.Cmd.String()).To(ContainSubstring("--env SKIP_POST_DEPLOYMENT_MIGRATIONS=1"))
+			Expect(cmd.Cmd.String()).To(ContainSubstring("--env SKIP_EMBER_CLI_COMPILE=1"))
+			// no commit after, we expect an --rm as the container isn't needed after it is stopped
+			Expect(cmd.Cmd.String()).To(ContainSubstring("--rm"))
+			Expect(cmd.Cmd.Env).To(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
+			buf := new(strings.Builder)
+			io.Copy(buf, cmd.Cmd.Stdin)
+			// docker run's stdin is a pups config
+			Expect(buf.String()).To(ContainSubstring("path: /etc/service/nginx/run"))
 		})
 
 		It("Should run docker run followed by docker commit and rm container when configuring", func() {
