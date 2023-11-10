@@ -8,13 +8,10 @@ import (
 	"github.com/posener/complete"
 	"github.com/willabides/kongplete"
 	"golang.org/x/sys/unix"
-	"io"
 	"os"
 	"os/exec"
 	"os/signal"
 )
-
-var Out io.Writer = os.Stdout
 
 type Cli struct {
 	ConfDir      string             `default:"./containers" help:"Pups config directory." predictor:"dir"`
@@ -68,7 +65,7 @@ func main() {
 	go func() {
 		select {
 		case <-sigChan:
-			fmt.Fprintln(Out, "Command interrupted")
+			fmt.Fprintln(utils.Out, "Command interrupted")
 			cancel()
 		case <-done:
 		}

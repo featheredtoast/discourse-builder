@@ -213,7 +213,7 @@ func (r *DockerPupsRunner) Run() error {
 	}
 
 	if len(r.SavedImageName) > 0 {
-		time.Sleep(5 * time.Second)
+		time.Sleep(utils.CommitWait)
 		cmd := exec.Command("docker",
 			"commit",
 			"--change",
@@ -226,12 +226,15 @@ func (r *DockerPupsRunner) Run() error {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
+		fmt.Fprintln(utils.Out, cmd)
 		err := utils.CmdRunner(cmd).Run()
 
 		//clean up container before error checking
 		runCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		cmd = exec.CommandContext(runCtx, utils.DockerPath, "rm", "-f", r.ContainerId)
+
+		time.Sleep(utils.CommitWait)
 		utils.CmdRunner(cmd).Run()
 
 		if err != nil {

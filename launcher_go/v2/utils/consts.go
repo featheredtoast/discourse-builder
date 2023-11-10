@@ -1,7 +1,10 @@
 package utils
 
 import (
+	"io"
+	"os"
 	"os/exec"
+	"time"
 )
 
 const BaseImageName = "local_discourse/"
@@ -38,3 +41,7 @@ func findDockerPath() string {
 }
 
 var DockerPath = findDockerPath()
+
+var Out io.Writer = os.Stdout
+
+var CommitWait = 5 * time.Second

@@ -20,7 +20,7 @@ var _ = Describe("Runtime", func() {
 	BeforeEach(func() {
 		utils.DockerPath = "docker"
 		out = &bytes.Buffer{}
-		ddocker.Out = out
+		utils.Out = out
 		testDir, _ = os.MkdirTemp("", "ddocker-test")
 
 		ctx = context.Background()

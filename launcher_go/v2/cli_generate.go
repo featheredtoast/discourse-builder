@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/discourse/discourse_docker/launcher_go/v2/config"
+	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
 	"os"
 )
 
@@ -29,13 +30,13 @@ func (r *RawYamlCmd) Run(cli *Cli) error {
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
-	fmt.Fprint(Out, config.Yaml())
+	fmt.Fprint(utils.Out, config.Yaml())
 	return nil
 }
 
 type DockerComposeCmd struct {
 	OutputDir string `name:"output dir" default:"./compose" short:"o" help:"Output dir for docker compose files." predictor:"dir"`
-	BakeEnv bool `short:"e" help:"Bake in the configured environment to image after build."`
+	BakeEnv   bool   `short:"e" help:"Bake in the configured environment to image after build."`
 
 	Config string `arg:"" name:"config" help:"config" predictor:"config"`
 }
@@ -74,13 +75,13 @@ func (r *DockerArgsCmd) Run(cli *Cli) error {
 	}
 	switch r.Type {
 	case "args":
-		fmt.Fprint(Out, config.DockerArgsCli(r.IncludePorts))
+		fmt.Fprint(utils.Out, config.DockerArgsCli(r.IncludePorts))
 	case "run-image":
-		fmt.Fprint(Out, config.RunImage())
+		fmt.Fprint(utils.Out, config.RunImage())
 	case "boot-command":
-		fmt.Fprint(Out, config.BootCommand())
+		fmt.Fprint(utils.Out, config.BootCommand())
 	case "hostname":
-		fmt.Fprint(Out, config.DockerHostname(""))
+		fmt.Fprint(utils.Out, config.DockerHostname(""))
 	default:
 		return errors.New("unknown docker args type")
 	}
