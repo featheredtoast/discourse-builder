@@ -213,6 +213,7 @@ func (r *DockerPupsRunner) Run() error {
 	}
 
 	if len(r.SavedImageName) > 0 {
+		time.Sleep(5 * time.Second)
 		cmd := exec.Command("docker",
 			"commit",
 			"--change",
