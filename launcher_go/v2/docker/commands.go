@@ -194,6 +194,15 @@ func (r *DockerPupsRunner) Run() error {
 	if r.SavedImageName == "" {
 		rm = true
 	}
+	defer func(rm bool) {
+		if !rm {
+			time.Sleep(utils.CommitWait)
+			runCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			cmd := exec.CommandContext(runCtx, utils.DockerPath, "rm", "-f", r.ContainerId)
+			utils.CmdRunner(cmd).Run()
+			cancel()
+		}
+	}(rm)
 	commands := []string{"/bin/bash",
 		"-c",
 		"/usr/local/bin/pups --stdin " + r.PupsArgs}
@@ -227,17 +236,7 @@ func (r *DockerPupsRunner) Run() error {
 		cmd.Stderr = os.Stderr
 
 		fmt.Fprintln(utils.Out, cmd)
-		err := utils.CmdRunner(cmd).Run()
-
-		//clean up container before error checking
-		runCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		cmd = exec.CommandContext(runCtx, utils.DockerPath, "rm", "-f", r.ContainerId)
-
-		time.Sleep(utils.CommitWait)
-		utils.CmdRunner(cmd).Run()
-
-		if err != nil {
+		if err := utils.CmdRunner(cmd).Run(); err != nil {
 			return err
 		}
 	}
