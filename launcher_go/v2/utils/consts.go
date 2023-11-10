@@ -44,4 +44,4 @@ var DockerPath = findDockerPath()
 
 var Out io.Writer = os.Stdout
 
-var CommitWait = 5 * time.Second
+var CommitWait = 2 * time.Second
