@@ -224,15 +224,18 @@ func (r *DockerPupsRunner) Run() error {
 		)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		if err := utils.CmdRunner(cmd).Run(); err != nil {
-			return err
-		}
 
-		//clean up container
+		err := utils.CmdRunner(cmd).Run()
+
+		//clean up container before error checking
 		runCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		cmd = exec.CommandContext(runCtx, utils.DockerPath, "rm", "-f", r.ContainerId)
 		utils.CmdRunner(cmd).Run()
+
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
