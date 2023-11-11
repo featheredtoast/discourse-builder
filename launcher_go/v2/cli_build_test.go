@@ -8,6 +8,7 @@ import (
 	"context"
 	ddocker "github.com/discourse/discourse_docker/launcher_go/v2"
 	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
+	. "github.com/discourse/discourse_docker/launcher_go/v2/test_utils"
 	"io"
 	"os"
 	"strings"
@@ -39,16 +40,10 @@ var _ = Describe("Build", func() {
 
 	Context("When running build commands", func() {
 
-		var CmdCreatorWatcher chan utils.ICmdRunner
-		var getLastCommand = func() *FakeCmdRunner {
-			icmd := <-CmdCreatorWatcher
-			cmd, _ := icmd.(*FakeCmdRunner)
-			<-cmd.RunCalls
-			return cmd
-		}
+		var cmdWatch chan utils.ICmdRunner
 
 		var checkBuildCmd = func() {
-			cmd := getLastCommand()
+			cmd := GetLastCommand(cmdWatch)
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker build"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("--build-arg DISCOURSE_DEVELOPER_EMAILS"))
 			Expect(cmd.Cmd.Dir).To(Equal(testDir + "/test"))
@@ -65,7 +60,7 @@ var _ = Describe("Build", func() {
 		}
 
 		var checkMigrateCmd = func() {
-			cmd := getLastCommand()
+			cmd := GetLastCommand(cmdWatch)
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("--env DISCOURSE_DEVELOPER_EMAILS"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("--env SKIP_EMBER_CLI_COMPILE=1"))
@@ -79,7 +74,7 @@ var _ = Describe("Build", func() {
 		}
 
 		var checkConfigureCmd = func() {
-			cmd := getLastCommand()
+			cmd := GetLastCommand(cmdWatch)
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("--env DISCOURSE_DEVELOPER_EMAILS"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("--env SKIP_EMBER_CLI_COMPILE=1"))
@@ -95,7 +90,7 @@ var _ = Describe("Build", func() {
 			Expect(buf.String()).To(ContainSubstring("path: /etc/service/nginx/run"))
 
 			// commit on configure
-			cmd = getLastCommand()
+			cmd = GetLastCommand(cmdWatch)
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker commit"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("--change CMD [\"/sbin/boot\"]"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("discourse-build"))
@@ -103,13 +98,13 @@ var _ = Describe("Build", func() {
 			Expect(cmd.Cmd.Env).ToNot(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
 
 			// configure also cleans up
-			cmd = getLastCommand()
+			cmd = GetLastCommand(cmdWatch)
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker rm -f discourse-build-"))
 		}
 
 		BeforeEach(func() {
-			CmdCreatorWatcher = make(chan utils.ICmdRunner)
-			utils.CmdRunner = CreateNewFakeCmdRunner(CmdCreatorWatcher)
+			cmdWatch = make(chan utils.ICmdRunner)
+			utils.CmdRunner = CreateNewFakeCmdRunner(cmdWatch)
 		})
 		AfterEach(func() {
 		})
@@ -129,7 +124,7 @@ var _ = Describe("Build", func() {
 		It("Should allow skip post deployment migrations", func() {
 			runner := ddocker.DockerMigrateCmd{Config: "test", SkipPostDeploymentMigrations: true}
 			go runner.Run(cli, &ctx)
-			cmd := getLastCommand()
+			cmd := GetLastCommand(cmdWatch)
 			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("--env DISCOURSE_DEVELOPER_EMAILS"))
 			Expect(cmd.Cmd.String()).To(ContainSubstring("--env SKIP_POST_DEPLOYMENT_MIGRATIONS=1"))
