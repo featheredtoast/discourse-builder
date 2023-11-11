@@ -191,6 +191,8 @@ type DockerPupsRunner struct {
 
 func (r *DockerPupsRunner) Run() error {
 	rm := false
+	// remove : in case docker tag is blank, and use default latest tag
+	r.SavedImageName = strings.TrimRight(r.SavedImageName, ":")
 	if r.SavedImageName == "" {
 		rm = true
 	}
