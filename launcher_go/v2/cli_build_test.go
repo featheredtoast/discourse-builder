@@ -7,10 +7,11 @@ import (
 	"bytes"
 	"context"
 	ddocker "github.com/discourse/discourse_docker/launcher_go/v2"
-	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
 	. "github.com/discourse/discourse_docker/launcher_go/v2/test_utils"
+	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
 	"io"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -33,123 +34,122 @@ var _ = Describe("Build", func() {
 			TemplatesDir: "./test",
 			BuildDir:     testDir,
 		}
+		utils.CmdRunner = CreateNewFakeCmdRunner()
 	})
 	AfterEach(func() {
 		os.RemoveAll(testDir)
 	})
 
 	Context("When running build commands", func() {
-
-		var cmdWatch chan utils.ICmdRunner
-
-		var checkBuildCmd = func() {
-			cmd := GetLastCommand(cmdWatch)
-			Expect(cmd.Cmd.String()).To(ContainSubstring("docker build"))
-			Expect(cmd.Cmd.String()).To(ContainSubstring("--build-arg DISCOURSE_DEVELOPER_EMAILS"))
-			Expect(cmd.Cmd.Dir).To(Equal(testDir + "/test"))
+		var checkBuildCmd = func(cmd exec.Cmd) {
+			Expect(cmd.String()).To(ContainSubstring("docker build"))
+			Expect(cmd.String()).To(ContainSubstring("--build-arg DISCOURSE_DEVELOPER_EMAILS"))
+			Expect(cmd.Dir).To(Equal(testDir + "/test"))
 
 			//db password is ignored
-			Expect(cmd.Cmd.Env).ToNot(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
-			Expect(cmd.Cmd.Env).ToNot(ContainElement("DISCOURSEDB_SOCKET="))
+			Expect(cmd.Env).ToNot(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
+			Expect(cmd.Env).ToNot(ContainElement("DISCOURSEDB_SOCKET="))
 			buf := new(strings.Builder)
-			io.Copy(buf, cmd.Cmd.Stdin)
+			io.Copy(buf, cmd.Stdin)
 			// docker build's stdin is a dockerfile
 			Expect(buf.String()).To(ContainSubstring("COPY config.yaml /temp-config.yaml"))
 			Expect(buf.String()).To(ContainSubstring("--skip-tags=precompile,migrate,db"))
 			Expect(buf.String()).ToNot(ContainSubstring("SKIP_EMBER_CLI_COMPILE=1"))
 		}
 
-		var checkMigrateCmd = func() {
-			cmd := GetLastCommand(cmdWatch)
-			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
-			Expect(cmd.Cmd.String()).To(ContainSubstring("--env DISCOURSE_DEVELOPER_EMAILS"))
-			Expect(cmd.Cmd.String()).To(ContainSubstring("--env SKIP_EMBER_CLI_COMPILE=1"))
+		var checkMigrateCmd = func(cmd exec.Cmd) {
+			Expect(cmd.String()).To(ContainSubstring("docker run"))
+			Expect(cmd.String()).To(ContainSubstring("--env DISCOURSE_DEVELOPER_EMAILS"))
+			Expect(cmd.String()).To(ContainSubstring("--env SKIP_EMBER_CLI_COMPILE=1"))
 			// no commit after, we expect an --rm as the container isn't needed after it is stopped
-			Expect(cmd.Cmd.String()).To(ContainSubstring("--rm"))
-			Expect(cmd.Cmd.Env).To(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
+			Expect(cmd.String()).To(ContainSubstring("--rm"))
+			Expect(cmd.Env).To(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
 			buf := new(strings.Builder)
-			io.Copy(buf, cmd.Cmd.Stdin)
+			io.Copy(buf, cmd.Stdin)
 			// docker run's stdin is a pups config
 			Expect(buf.String()).To(ContainSubstring("path: /etc/service/nginx/run"))
 		}
 
-		var checkConfigureCmd = func() {
-			cmd := GetLastCommand(cmdWatch)
-			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
-			Expect(cmd.Cmd.String()).To(ContainSubstring("--env DISCOURSE_DEVELOPER_EMAILS"))
-			Expect(cmd.Cmd.String()).To(ContainSubstring("--env SKIP_EMBER_CLI_COMPILE=1"))
+		var checkConfigureCmd = func(cmd exec.Cmd) {
+			Expect(cmd.String()).To(ContainSubstring("docker run"))
+			Expect(cmd.String()).To(ContainSubstring("--env DISCOURSE_DEVELOPER_EMAILS"))
+			Expect(cmd.String()).To(ContainSubstring("--env SKIP_EMBER_CLI_COMPILE=1"))
 			// we commit, we need the container to stick around after it is stopped.
-			Expect(cmd.Cmd.String()).ToNot(ContainSubstring("--rm"))
+			Expect(cmd.String()).ToNot(ContainSubstring("--rm"))
 
 			// we don't expose ports on configure command
-			Expect(cmd.Cmd.String()).ToNot(ContainSubstring("-p 80"))
-			Expect(cmd.Cmd.Env).To(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
+			Expect(cmd.String()).ToNot(ContainSubstring("-p 80"))
+			Expect(cmd.Env).To(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
 			buf := new(strings.Builder)
-			io.Copy(buf, cmd.Cmd.Stdin)
+			io.Copy(buf, cmd.Stdin)
 			// docker run's stdin is a pups config
 			Expect(buf.String()).To(ContainSubstring("path: /etc/service/nginx/run"))
-
-			// commit on configure
-			cmd = GetLastCommand(cmdWatch)
-			Expect(cmd.Cmd.String()).To(ContainSubstring("docker commit"))
-			Expect(cmd.Cmd.String()).To(ContainSubstring("--change CMD [\"/sbin/boot\"]"))
-			Expect(cmd.Cmd.String()).To(ContainSubstring("discourse-build"))
-			Expect(cmd.Cmd.String()).To(ContainSubstring("local_discourse/test"))
-			Expect(cmd.Cmd.Env).ToNot(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
-
-			// configure also cleans up
-			cmd = GetLastCommand(cmdWatch)
-			Expect(cmd.Cmd.String()).To(ContainSubstring("docker rm -f discourse-build-"))
 		}
 
-		BeforeEach(func() {
-			cmdWatch = make(chan utils.ICmdRunner)
-			utils.CmdRunner = CreateNewFakeCmdRunner(cmdWatch)
-		})
-		AfterEach(func() {
-		})
+		// commit on configure
+		var checkConfigureCommit = func(cmd exec.Cmd) {
+			Expect(cmd.String()).To(ContainSubstring("docker commit"))
+			Expect(cmd.String()).To(ContainSubstring("--change CMD [\"/sbin/boot\"]"))
+			Expect(cmd.String()).To(ContainSubstring("discourse-build"))
+			Expect(cmd.String()).To(ContainSubstring("local_discourse/test"))
+			Expect(cmd.Env).ToNot(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
+		}
+
+		// configure also cleans up
+		var checkConfigureClean = func(cmd exec.Cmd) {
+			Expect(cmd.String()).To(ContainSubstring("docker rm -f discourse-build-"))
+		}
 
 		It("Should run docker build with correct arguments", func() {
 			runner := ddocker.DockerBuildCmd{Config: "test"}
-			go runner.Run(cli, &ctx)
-			checkBuildCmd()
+			runner.Run(cli, &ctx)
+			Eventually(len(RanCmds)).Should(Equal(1))
+			checkBuildCmd(RanCmds[0])
 		})
 
 		It("Should run docker migrate with correct arguments", func() {
 			runner := ddocker.DockerMigrateCmd{Config: "test"}
-			go runner.Run(cli, &ctx)
-			checkMigrateCmd()
+			runner.Run(cli, &ctx)
+			Eventually(len(RanCmds)).Should(Equal(1))
+			checkMigrateCmd(RanCmds[0])
 		})
 
 		It("Should allow skip post deployment migrations", func() {
 			runner := ddocker.DockerMigrateCmd{Config: "test", SkipPostDeploymentMigrations: true}
-			go runner.Run(cli, &ctx)
-			cmd := GetLastCommand(cmdWatch)
-			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
-			Expect(cmd.Cmd.String()).To(ContainSubstring("--env DISCOURSE_DEVELOPER_EMAILS"))
-			Expect(cmd.Cmd.String()).To(ContainSubstring("--env SKIP_POST_DEPLOYMENT_MIGRATIONS=1"))
-			Expect(cmd.Cmd.String()).To(ContainSubstring("--env SKIP_EMBER_CLI_COMPILE=1"))
+			runner.Run(cli, &ctx)
+			Eventually(len(RanCmds)).Should(Equal(1))
+			cmd := RanCmds[0]
+			Expect(cmd.String()).To(ContainSubstring("docker run"))
+			Expect(cmd.String()).To(ContainSubstring("--env DISCOURSE_DEVELOPER_EMAILS"))
+			Expect(cmd.String()).To(ContainSubstring("--env SKIP_POST_DEPLOYMENT_MIGRATIONS=1"))
+			Expect(cmd.String()).To(ContainSubstring("--env SKIP_EMBER_CLI_COMPILE=1"))
 			// no commit after, we expect an --rm as the container isn't needed after it is stopped
-			Expect(cmd.Cmd.String()).To(ContainSubstring("--rm"))
-			Expect(cmd.Cmd.Env).To(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
+			Expect(cmd.String()).To(ContainSubstring("--rm"))
+			Expect(cmd.Env).To(ContainElement("DISCOURSE_DB_PASSWORD=SOME_SECRET"))
 			buf := new(strings.Builder)
-			io.Copy(buf, cmd.Cmd.Stdin)
+			io.Copy(buf, cmd.Stdin)
 			// docker run's stdin is a pups config
 			Expect(buf.String()).To(ContainSubstring("path: /etc/service/nginx/run"))
 		})
 
 		It("Should run docker run followed by docker commit and rm container when configuring", func() {
 			runner := ddocker.DockerConfigureCmd{Config: "test"}
-			go runner.Run(cli, &ctx)
-			checkConfigureCmd()
+			runner.Run(cli, &ctx)
+			Eventually(len(RanCmds)).Should(Equal(3))
+			checkConfigureCmd(RanCmds[0])
+			checkConfigureCommit(RanCmds[1])
+			checkConfigureClean(RanCmds[2])
 		})
 
 		It("Should run all docker commands for full bootstrap", func() {
 			runner := ddocker.DockerBootstrapCmd{Config: "test"}
-			go runner.Run(cli, &ctx)
-			checkBuildCmd()
-			checkMigrateCmd()
-			checkConfigureCmd()
+			runner.Run(cli, &ctx)
+			Eventually(len(RanCmds)).Should(Equal(5))
+			checkBuildCmd(RanCmds[0])
+			checkMigrateCmd(RanCmds[1])
+			checkConfigureCmd(RanCmds[2])
+			checkConfigureCommit(RanCmds[3])
+			checkConfigureClean(RanCmds[4])
 		})
 	})
 })

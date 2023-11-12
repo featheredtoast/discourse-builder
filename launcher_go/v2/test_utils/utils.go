@@ -3,54 +3,40 @@ package test_utils
 import (
 	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
 	"os/exec"
-	"time"
 )
+
+var RanCmds []exec.Cmd
+var CmdOutputResponse []byte
+var CmdOutputError error
 
 type FakeCmdRunner struct {
 	Cmd            *exec.Cmd
-	RunCalls       chan int
-	OutputResponse *[]byte
 }
 
-func (r *FakeCmdRunner) Run() error {
-	r.RunCalls <- 1
-	return nil
+func (r FakeCmdRunner) Run() error {
+	RanCmds = append(RanCmds, *r.Cmd)
+	return CmdOutputError
 }
 
-func (r *FakeCmdRunner) Output() ([]byte, error) {
-	r.RunCalls <- 1
-	return *r.OutputResponse, nil
+func (r FakeCmdRunner) Output() ([]byte, error) {
+	RanCmds = append(RanCmds, *r.Cmd)
+	return CmdOutputResponse, CmdOutputError
 }
 
 // Swap out CmdRunner with a fake instance that also returns created ICmdRunners on a channel
-// so tests can inspect commands the moment they're run
-func CreateNewFakeCmdRunner(c chan utils.ICmdRunner) func(cmd *exec.Cmd) utils.ICmdRunner {
+// so tests can inspect commands after they're run
+func CreateNewFakeCmdRunner() func(cmd *exec.Cmd) utils.ICmdRunner {
+	RanCmds = []exec.Cmd{}
+	CmdOutputResponse = []byte{}
+	CmdOutputError = nil
 	return func(cmd *exec.Cmd) utils.ICmdRunner {
-		cmdRunner := &FakeCmdRunner{Cmd: cmd,
-			RunCalls:       make(chan int),
-			OutputResponse: &[]byte{}}
-		c <- cmdRunner
+		cmdRunner := &FakeCmdRunner{Cmd: cmd}
 		return cmdRunner
 	}
 }
 
-func CreateNewFakeCmdRunnerWithOutput(c chan utils.ICmdRunner, outputResponse *[]byte) func(cmd *exec.Cmd) utils.ICmdRunner {
-	return func(cmd *exec.Cmd) utils.ICmdRunner {
-		cmdRunner := &FakeCmdRunner{Cmd: cmd,
-			RunCalls:       make(chan int),
-			OutputResponse: outputResponse}
-		c <- cmdRunner
-		return cmdRunner
-	}
-}
-
-func GetLastCommand(cmdCreatorWatcher chan utils.ICmdRunner) *FakeCmdRunner {
-	select {
-	case icmd := <-cmdCreatorWatcher:
-		cmd, _ := icmd.(*FakeCmdRunner)
-		<-cmd.RunCalls
-		return cmd
-	case <-time.After(time.Second):
-		panic("no command!")
-	}
+func GetLastCommand() exec.Cmd {
+	cmd := RanCmds[0]
+	RanCmds = RanCmds[1:]
+	return cmd
 }

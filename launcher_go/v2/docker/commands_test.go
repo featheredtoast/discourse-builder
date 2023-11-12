@@ -18,26 +18,24 @@ var _ = Describe("Commands", func() {
 		var conf *config.Config
 		var out *bytes.Buffer
 		var ctx context.Context
-		var CmdCreatorWatcher chan utils.ICmdRunner
 
 		BeforeEach(func() {
-			CmdCreatorWatcher = make(chan utils.ICmdRunner)
 			utils.DockerPath = "docker"
 			out = &bytes.Buffer{}
 			utils.Out = out
 			utils.CommitWait = 0
 			conf = &config.Config{Name: "test"}
 			ctx = context.Background()
-			utils.CmdRunner = CreateNewFakeCmdRunner(CmdCreatorWatcher)
+			utils.CmdRunner = CreateNewFakeCmdRunner()
 		})
 		It("Removes unspecified image tags on commit", func() {
 			runner := docker.DockerPupsRunner{Config: conf, ContainerId: "123", Ctx: &ctx, SavedImageName: "local_discourse/test:"}
-			go runner.Run()
-			cmd := GetLastCommand(CmdCreatorWatcher)
-			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
-			cmd = GetLastCommand(CmdCreatorWatcher)
-			Expect(cmd.Cmd.String()).To(ContainSubstring("docker commit"))
-			Expect(strings.HasSuffix(cmd.Cmd.String(), ":")).To(BeFalse())
+			runner.Run()
+			cmd := RanCmds[0]
+			Expect(cmd.String()).To(ContainSubstring("docker run"))
+			cmd = RanCmds[1]
+			Expect(cmd.String()).To(ContainSubstring("docker commit"))
+			Expect(strings.HasSuffix(cmd.String(), ":")).To(BeFalse())
 		})
 	})
 })
