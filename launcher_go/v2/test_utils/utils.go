@@ -3,6 +3,7 @@ package test_utils
 import (
 	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
 	"os/exec"
+	"time"
 )
 
 type FakeCmdRunner struct {
@@ -44,8 +45,12 @@ func CreateNewFakeCmdRunnerWithOutput(c chan utils.ICmdRunner, outputResponse *[
 }
 
 func GetLastCommand(cmdCreatorWatcher chan utils.ICmdRunner) *FakeCmdRunner {
-	icmd := <-cmdCreatorWatcher
-	cmd, _ := icmd.(*FakeCmdRunner)
-	<-cmd.RunCalls
-	return cmd
+	select {
+	case icmd := <-cmdCreatorWatcher:
+		cmd, _ := icmd.(*FakeCmdRunner)
+		<-cmd.RunCalls
+		return cmd
+	case <-time.After(time.Second):
+		panic("no command!")
+	}
 }

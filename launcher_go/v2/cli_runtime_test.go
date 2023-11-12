@@ -73,20 +73,19 @@ var _ = Describe("Runtime", func() {
 			utils.CmdRunner = CreateNewFakeCmdRunner(cmdWatch)
 		})
 		AfterEach(func() {
+			close(cmdWatch)
 		})
 
 		It("should run start commands", func() {
 			runner := ddocker.StartCmd{Config: "test"}
 			go runner.Run(cli, &ctx)
 			checkStartCmd()
-			close(cmdWatch)
 		})
 
 		It("should not run stop commands", func() {
 			runner := ddocker.StopCmd{Config: "test"}
 			go runner.Run(cli, &ctx)
 			checkStopCmdWhenMissing()
-			close(cmdWatch)
 		})
 
 		Context("with a running container", func() {
@@ -100,16 +99,59 @@ var _ = Describe("Runtime", func() {
 				runner := ddocker.StartCmd{Config: "test"}
 				go runner.Run(cli, &ctx)
 				checkStartCmdWhenStarted()
-				close(cmdWatch)
 			})
 
 			It("should run stop commands", func() {
 				runner := ddocker.StopCmd{Config: "test"}
 				go runner.Run(cli, &ctx)
 				checkStopCmd()
-				close(cmdWatch)
 			})
 		})
 
+		It("should keep running during commits, and be post-deploy migration aware when using a web only container", func() {
+			runner := ddocker.RebuildCmd{Config: "web_only"}
+
+			go runner.Run(cli, &ctx)
+
+			//initial build
+			cmd := GetLastCommand(cmdWatch)
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker build"))
+
+			//migrate, skipping post deployment migrations
+			cmd = GetLastCommand(cmdWatch)
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
+			Expect(cmd.Cmd.String()).To(ContainSubstring("--tags=db,migrate"))
+			Expect(cmd.Cmd.String()).To(ContainSubstring("--env SKIP_POST_DEPLOYMENT_MIGRATIONS=1"))
+
+			// precompile
+			cmd = GetLastCommand(cmdWatch)
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
+			Expect(cmd.Cmd.String()).To(ContainSubstring("--tags=db,precompile"))
+			cmd = GetLastCommand(cmdWatch)
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker commit"))
+			cmd = GetLastCommand(cmdWatch)
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker rm"))
+
+			// destroying (because we never started from the tests, this will look like a stoppe container, and there is no stop+rm command)
+			cmd = GetLastCommand(cmdWatch)
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker ps -a -q --filter name=web_only"))
+
+			// run expects 2 ps runs on start
+			cmd = GetLastCommand(cmdWatch)
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker ps -q --filter name=web_only"))
+			cmd = GetLastCommand(cmdWatch)
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker ps -a -q --filter name=web_only"))
+
+			// starting container
+			cmd = GetLastCommand(cmdWatch)
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
+			Expect(cmd.Cmd.String()).To(ContainSubstring("-d"))
+			Expect(cmd.Cmd.String()).To(ContainSubstring("/sbin/boot"))
+
+			// run post-deploy migrations
+			cmd = GetLastCommand(cmdWatch)
+			Expect(cmd.Cmd.String()).To(ContainSubstring("docker run"))
+			Expect(cmd.Cmd.String()).To(ContainSubstring("--tags=db,migrate"))
+		})
 	})
 })

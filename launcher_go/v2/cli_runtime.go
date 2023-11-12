@@ -31,6 +31,8 @@ type StartCmd struct {
 	DockerArgs string `name:"docker-args" help:"Extra arguments to pass when running docker."`
 	RunImage   string `name:"run-image" help:"Start with a custom image."`
 	Supervised bool   `name:"supervised" help:"Attach the running container on start."`
+
+	extraEnv []string
 }
 
 func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
@@ -77,6 +79,7 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 		Restart:     restart,
 		Detatch:     detatch,
 		ExtraFlags:  extraFlags,
+		ExtraEnv:    r.extraEnv,
 		Hostname:    hostname,
 		Cmd:         []string{bootCmd},
 	}
@@ -117,7 +120,7 @@ type StopCmd struct {
 func (r *StopCmd) Run(cli *Cli, ctx *context.Context) error {
 	exists, _ := docker.ContainerExists(r.Config)
 	if !exists {
-		fmt.Fprintln(utils.Out, r.Config + " was not found")
+		fmt.Fprintln(utils.Out, r.Config+" was not found")
 		return nil
 	}
 	cmd := exec.CommandContext(*ctx, "docker", "stop", "-t", "600", r.Config)
@@ -153,7 +156,7 @@ type DestroyCmd struct {
 func (r *DestroyCmd) Run(cli *Cli, ctx *context.Context) error {
 	exists, _ := docker.ContainerExists(r.Config)
 	if !exists {
-		fmt.Fprintln(utils.Out, r.Config + " was not found")
+		fmt.Fprintln(utils.Out, r.Config+" was not found")
 		return nil
 	}
 
@@ -202,6 +205,7 @@ func (r *LogsCmd) Run(cli *Cli, ctx *context.Context) error {
 type RebuildCmd struct {
 	Config    string `arg:"" name:"config" help:"config" predictor:"config"`
 	FullBuild bool   `name:"full-build" help:"Run a full build image even when migrate on boot and precompile on boot are present in the config."`
+	Clean     bool   `help:"also runs clean"`
 }
 
 func (r *RebuildCmd) Run(cli *Cli, ctx *context.Context) error {
@@ -210,32 +214,61 @@ func (r *RebuildCmd) Run(cli *Cli, ctx *context.Context) error {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
 
+	// if we're not in an all-in-one setup, we can run migrations while the app is running
+	externalDb := config.Env["DISCOURSE_DB_SOCKET"] == "" && config.Env["DISCOURSE_DB_HOST"] != ""
+
 	build := DockerBuildCmd{Config: r.Config}
 	configure := DockerConfigureCmd{Config: r.Config}
-	migrate := DockerMigrateCmd{Config: r.Config}
-	start := StartCmd{Config: r.Config}
 	stop := StopCmd{Config: r.Config}
 	destroy := DestroyCmd{Config: r.Config}
+	clean := CleanupCmd{}
+	extraEnv := []string{}
 
 	if err := build.Run(cli, ctx); err != nil {
 		return err
 	}
-	if err := stop.Run(cli, ctx); err != nil {
-		return err
+	if !externalDb {
+		if err := stop.Run(cli, ctx); err != nil {
+			return err
+		}
 	}
 	_, migrateOnBoot := config.Env["MIGRATE_ON_BOOT"]
 	if !migrateOnBoot || r.FullBuild {
-		migrate.Run(cli, ctx)
+		migrate := DockerMigrateCmd{Config: r.Config}
+		if externalDb {
+			// defer post deploy migrations until after reboot
+			migrate.SkipPostDeploymentMigrations = true
+		}
+		if err := migrate.Run(cli, ctx); err != nil {
+			return err
+		}
+		extraEnv = append(extraEnv, "MIGRATE_ON_BOOT=0")
 	}
 	_, precompileOnBoot := config.Env["PRECOMPILE_ON_BOOT"]
 	if !precompileOnBoot || r.FullBuild {
-		configure.Run(cli, ctx)
+		if err := configure.Run(cli, ctx); err != nil {
+			return err
+		}
+		extraEnv = append(extraEnv, "PRECOMPILE_ON_BOOT=0")
 	}
 	if err := destroy.Run(cli, ctx); err != nil {
 		return err
 	}
+	start := StartCmd{Config: r.Config, extraEnv: extraEnv}
 	if err := start.Run(cli, ctx); err != nil {
 		return err
+	}
+	// run post deploy migrations since we've rebooted
+	if externalDb {
+		migrate := DockerMigrateCmd{Config: r.Config}
+		if err := migrate.Run(cli, ctx); err != nil {
+			return err
+		}
+	}
+	if r.Clean {
+		if err := clean.Run(cli, ctx); err != nil {
+			return err
+		}
 	}
 	return nil
 }
