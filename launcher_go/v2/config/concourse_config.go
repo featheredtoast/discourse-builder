@@ -83,7 +83,7 @@ func getConcourseTask(config Config) string {
 func GenConcourseConfig(config Config) string {
 
 	concourseConfig := &ConcourseConfig{
-		Dockerfile:    config.Dockerfile("", false),
+		Dockerfile:    config.Dockerfile("--skip-tags=precompile,migrate,db", false),
 		ConcourseTask: getConcourseTask(config),
 		Config:        config.Yaml(),
 	}
