@@ -22,7 +22,7 @@ func DefaultBaseImage() string {
 	if runtime.GOARCH == "arm64" {
 		return "discourse/base:aarch64"
 	}
-	return "discourse/base:2.0.20231004-0028"
+	return "discourse/base:2.0.20231121-0024"
 }
 
 type DockerComposeYaml struct {
