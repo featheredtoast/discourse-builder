@@ -31,11 +31,13 @@ var _ = Describe("Commands", func() {
 		It("Removes unspecified image tags on commit", func() {
 			runner := docker.DockerPupsRunner{Config: conf, ContainerId: "123", Ctx: &ctx, SavedImageName: "local_discourse/test:"}
 			runner.Run()
-			cmd := RanCmds[0]
+			cmd := GetLastCommand()
 			Expect(cmd.String()).To(ContainSubstring("docker run"))
-			cmd = RanCmds[1]
+			cmd = GetLastCommand()
 			Expect(cmd.String()).To(ContainSubstring("docker commit"))
 			Expect(strings.HasSuffix(cmd.String(), ":")).To(BeFalse())
+			cmd = GetLastCommand()
+			Expect(cmd.String()).To(ContainSubstring("docker rm"))
 		})
 	})
 })
