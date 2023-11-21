@@ -19,7 +19,7 @@ type CliGenerate struct {
 	DockerCompose DockerComposeCmd `cmd:"" name:"compose" help:"Create docker compose setup in the output {output-directory}/{config}/. The builder generates a docker-compose.yaml, Dockerfile, config.yaml, and an env file for you to source .envrc. Run with 'source .envrc; docker compose up'."`
 	DockerArgs    DockerArgsCmd    `cmd:"" name:"docker-args" help:"Print docker run args."`
 	RawYaml       RawYamlCmd       `cmd:"" name:"raw-yaml" help:"Print raw config, concatenated in pups format."`
-	ConcourseJob ConcourseJobCmd `cmd:"" name:"concourse-job" help:"Print concourse job config"`
+	ConcourseJob  ConcourseJobCmd  `cmd:"" name:"concourse-job" help:"Print concourse job config"`
 }
 
 type RawYamlCmd struct {
@@ -90,7 +90,8 @@ func (r *DockerArgsCmd) Run(cli *Cli) error {
 }
 
 type ConcourseJobCmd struct {
-	Config       string `arg:"" name:"config" help:"config" predictor:"config"`
+	Output string `help:"write concourse job to output file"`
+	Config string `arg:"" name:"config" help:"config" predictor:"config"`
 }
 
 func (r *ConcourseJobCmd) Run(cli *Cli) error {
@@ -98,6 +99,6 @@ func (r *ConcourseJobCmd) Run(cli *Cli) error {
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
-	fmt.Fprint(utils.Out, config.GenConcourseConfig(*loadedConfig))
+	config.WriteConcourseConfig(*loadedConfig, r.Output)
 	return nil
 }
