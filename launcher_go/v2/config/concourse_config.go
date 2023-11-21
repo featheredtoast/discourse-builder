@@ -24,7 +24,7 @@ type ConcourseRun struct {
 type ConcourseTask struct {
 	Params        yaml.Node
 	Platform      string
-	ImageResource ConcourseImageResource `yaml:image_resource`
+	ImageResource ConcourseImageResource `yaml:"image_resource"`
 	Inputs        []ConcourseIo
 	Outputs       []ConcourseIo
 	Run           ConcourseRun
@@ -32,7 +32,7 @@ type ConcourseTask struct {
 
 type ConcourseConfig struct {
 	Dockerfile    string
-	ConcourseTask string `yaml:concourse_task`
+	ConcourseTask string `yaml:"concourse_task"`
 	Config        string
 }
 
