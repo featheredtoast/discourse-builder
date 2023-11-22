@@ -64,7 +64,7 @@ func getConcourseTask(config Config) string {
 			Type:   "registry-image",
 			Source: ConcourseRepo{Repository: "concourse/oci-build-task"},
 		},
-		Inputs:  []ConcourseIo{ConcourseIo{Name: "docker-config"}},
+		Inputs:  []ConcourseIo{ConcourseIo{Name: "docker-config"}, ConcourseIo{Name: "docker-from-image"}},
 		Outputs: []ConcourseIo{ConcourseIo{Name: "image"}},
 		Run:     ConcourseRun{Path: "build"},
 	}
