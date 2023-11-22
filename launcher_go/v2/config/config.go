@@ -241,7 +241,8 @@ func (config *Config) WriteDockerfile(dir string, pupsArgs string, bakeEnv bool)
 
 func (config *Config) Dockerfile(pupsArgs string, bakeEnv bool) string {
 	builder := strings.Builder{}
-	builder.WriteString("FROM " + config.Base_Image + "\n")
+	builder.WriteString("ARG dockerfile_from_image=" + config.Base_Image + "\n")
+	builder.WriteString("FROM ${dockerfile_from_image}\n")
 	builder.WriteString(config.DockerfileArgs() + "\n")
 	if bakeEnv {
 		builder.WriteString(config.DockerfileEnvs() + "\n")
