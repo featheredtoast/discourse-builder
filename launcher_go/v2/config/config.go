@@ -59,7 +59,7 @@ type Config struct {
 	Docker_Args     string            `yaml:,omitempty`
 	Templates       []string          `yaml:templates,omitempty`
 	Expose          []string          `yaml:expose,omitempty`
-	Params          map[string]string `yaml:Params,omitempty`
+	Params          map[string]string `yaml:params,omitempty`
 	Env             map[string]string `yaml:env,omitempty`
 	Labels          map[string]string `yaml:labels,omitempty`
 	Volumes         []struct {
