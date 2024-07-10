@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -81,6 +82,12 @@ func (r *DockerRunner) Run() error {
 	if !r.Detatch {
 		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 		cmd.Cancel = func() error {
+			if runtime.GOOS == "darwin" {
+				runCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				stopCmd := exec.CommandContext(runCtx, utils.DockerPath, "stop", r.ContainerId)
+				utils.CmdRunner(stopCmd).Run()
+				cancel()
+			}
 			return unix.Kill(-cmd.Process.Pid, unix.SIGINT)
 		}
 	}

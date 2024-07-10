@@ -14,17 +14,19 @@ import (
 )
 
 type Cli struct {
-	ConfDir      string             `default:"./containers" help:"Pups config directory." predictor:"dir"`
-	TemplatesDir string             `default:"." help:"Parent directory containing a templates/ directory with pups yaml templates." predictor:"dir"`
+	Version      kong.VersionFlag   `help:"Show version."`
+	ConfDir      string             `default:"./containers" help:"Discourse pups config directory." predictor:"dir"`
+	TemplatesDir string             `default:"." help:"Home project directory containing a templates/ directory which in turn contains pups yaml templates." predictor:"dir"`
 	BuildDir     string             `default:"./tmp" help:"Temporary build folder for building images." predictor:"dir"`
 	ForceMkdir   bool               `short:"p" name:"parent-dirs" help:"Create intermediate output directories as required.  If this option is not specified, the full path prefix of each operand must already exist."`
-	CliGenerate  CliGenerate        `cmd:"" name:"generate" help:"Generate commands, used to generate Discourse pups configuration for external use."`
-	BuildCmd     DockerBuildCmd     `cmd:"" name:"build" help:"Build a base image with no dependencies."`
+	Upgrade      CliUpgrade         `cmd:"" help:"Upgrade launcher"`
+	CliGenerate  CliGenerate        `cmd:"" name:"generate" help:"Generate commands, used to generate Discourse pups, and other Discourse configuration for external tools."`
+	BuildCmd     DockerBuildCmd     `cmd:"" name:"build" help:"Build a base image. This command does not need a running database. Saves resulting container."`
 	ConfigureCmd DockerConfigureCmd `cmd:"" name:"configure" help:"Configure and save an image with all dependencies and environment baked in. Updates themes and precompiles all assets. Saves resulting container."`
-	MigrateCmd   DockerMigrateCmd   `cmd:"" name:"migrate" help:"Run migration tasks from a built image. Does not save the container."`
-	BootstrapCmd DockerBootstrapCmd `cmd:"" name:"bootstrap" help:"Build, migrate, and configure an image."`
+	MigrateCmd   DockerMigrateCmd   `cmd:"" name:"migrate" help:"Run migration tasks for a site. Running container is temporary and is not saved."`
+	BootstrapCmd DockerBootstrapCmd `cmd:"" name:"bootstrap" help:"Builds, migrates, and configures an image. Resulting image is a fully built and configured Discourse image."`
 
-	DestroyCmd DestroyCmd `cmd:"" name:"destroy" help:"Shutdown and destroy container."`
+	DestroyCmd DestroyCmd `cmd:"" alias:"rm" name:"destroy" help:"Shutdown and destroy container."`
 	LogsCmd    LogsCmd    `cmd:"" name:"logs" help:"Print logs for container."`
 	CleanupCmd CleanupCmd `cmd:"" name:"cleanup" help:"Cleanup unused containers."`
 	EnterCmd   EnterCmd   `cmd:"" name:"enter" help:"Connects to a shell running in the container."`
@@ -32,9 +34,9 @@ type Cli struct {
 	StartCmd   StartCmd   `cmd:"" name:"start" help:"Starts container."`
 	StopCmd    StopCmd    `cmd:"" name:"stop" help:"Stops container."`
 	RestartCmd RestartCmd `cmd:"" name:"restart" help:"Stops then starts container."`
-	RebuildCmd RebuildCmd `cmd:"" name:"rebuild" help:"Builds new image, then destroys old container, and starts new container. If PRECOMPILE_ON_BOOT and MIGRATE_ON_BOOT are set in the config, it will start up the container without running migrate and configure steps."`
+	RebuildCmd RebuildCmd `cmd:"" name:"rebuild" help:"Builds new image, then destroys old container, and starts new container."`
 
-	InstallCompletions kongplete.InstallCompletions `cmd:"" help:"install shell completions"`
+	InstallCompletions kongplete.InstallCompletions `cmd:"" aliases:"sh" help:"Print shell autocompletions. Add output to dotfiles, or 'source <(./launcher2 sh)'."`
 }
 
 func main() {
@@ -44,7 +46,7 @@ func main() {
 	// pre parse to get config dir for prediction of conf dir
 	confFiles := utils.FindConfigNames()
 
-	parser := kong.Must(&cli, kong.UsageOnError(), kong.Bind(&runCtx))
+	parser := kong.Must(&cli, kong.UsageOnError(), kong.Bind(&runCtx), kong.Vars{"version": utils.Version})
 
 	// Run kongplete.Complete to handle completion requests
 	kongplete.Complete(parser,
@@ -78,6 +80,8 @@ func main() {
 		// Magic exit code that indicates a retry
 		if exiterr.ExitCode() == 77 {
 			os.Exit(77)
+		} else if runCtx.Err() != nil {
+			fmt.Fprintln(utils.Out, "Aborted with exit code", exiterr.ExitCode())
 		} else {
 			ctx.Fatalf(
 				"run failed with exit code %v\n"+

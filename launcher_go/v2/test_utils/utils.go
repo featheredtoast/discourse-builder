@@ -10,7 +10,7 @@ var CmdOutputResponse []byte
 var CmdOutputError error
 
 type FakeCmdRunner struct {
-	Cmd            *exec.Cmd
+	Cmd *exec.Cmd
 }
 
 func (r FakeCmdRunner) Run() error {

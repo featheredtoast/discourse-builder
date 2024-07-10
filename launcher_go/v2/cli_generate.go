@@ -95,10 +95,15 @@ type ConcourseJobCmd struct {
 }
 
 func (r *ConcourseJobCmd) Run(cli *Cli) error {
+	fmt.Fprintln(utils.Out, "## WARNING: concourse job generation is experimental, use at your own risk!")
 	loadedConfig, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
-	config.WriteConcourseConfig(*loadedConfig, r.Output)
+	if r.Output == "" {
+		fmt.Fprint(utils.Out, config.GenConcourseConfig(*loadedConfig))
+	} else {
+		config.WriteConcourseConfig(*loadedConfig, r.Output)
+	}
 	return nil
 }

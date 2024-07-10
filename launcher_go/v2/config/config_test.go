@@ -85,11 +85,11 @@ var _ = Describe("Config", func() {
 
 	Context("hostname tests", func() {
 		It("replaces hostname", func() {
-			config := config.Config{Env: map[string]string{"DOCKER_USE_HOSTNAME":"true", "DISCOURSE_HOSTNAME":"asdfASDF"}}
+			config := config.Config{Env: map[string]string{"DOCKER_USE_HOSTNAME": "true", "DISCOURSE_HOSTNAME": "asdfASDF"}}
 			Expect(config.DockerHostname("")).To(Equal("asdfASDF"))
 		})
 		It("replaces hostname", func() {
-			config := config.Config{Env: map[string]string{"DOCKER_USE_HOSTNAME":"true", "DISCOURSE_HOSTNAME":"asdf!@#$%^&*()ASDF"}}
+			config := config.Config{Env: map[string]string{"DOCKER_USE_HOSTNAME": "true", "DISCOURSE_HOSTNAME": "asdf!@#$%^&*()ASDF"}}
 			Expect(config.DockerHostname("")).To(Equal("asdf----------ASDF"))
 		})
 		It("replaces a default hostnamehostname", func() {

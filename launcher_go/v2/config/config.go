@@ -77,8 +77,12 @@ type Config struct {
 }
 
 func (config *Config) loadTemplate(templateDir string, template string) error {
-	content, err := os.ReadFile(strings.TrimRight(templateDir, "/") + "/" + string(template))
+	template_filename := strings.TrimRight(templateDir, "/") + "/" + string(template)
+	content, err := os.ReadFile(template_filename)
 	if err != nil {
+		if os.IsNotExist(err) {
+			fmt.Println("template file does not exist: " + template_filename)
+		}
 		return err
 	}
 	templateConfig := &Config{}
@@ -105,8 +109,12 @@ func LoadConfig(dir string, configName string, includeTemplates bool, templatesD
 		return nil, errors.New(msg)
 	}
 
-	content, err := os.ReadFile(string(strings.TrimRight(dir, "/") + "/" + config.Name + ".yml"))
+	config_filename := string(strings.TrimRight(dir, "/") + "/" + config.Name + ".yml")
+	content, err := os.ReadFile(config_filename)
 	if err != nil {
+		if os.IsNotExist(err) {
+			fmt.Println("config file does not exist: " + config_filename)
+		}
 		return nil, err
 	}
 	baseConfig := &Config{}

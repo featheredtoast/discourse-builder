@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const Version = "v2.0.0"
+
 const BaseImageName = "local_discourse/"
 
 // Known secrets, or otherwise not public info from config so we can build public images

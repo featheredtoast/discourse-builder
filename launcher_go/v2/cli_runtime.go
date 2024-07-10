@@ -8,9 +8,13 @@ import (
 	"github.com/discourse/discourse_docker/launcher_go/v2/config"
 	"github.com/discourse/discourse_docker/launcher_go/v2/docker"
 	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
+	"golang.org/x/sys/unix"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
+	"syscall"
+	"time"
 )
 
 /*
@@ -30,7 +34,7 @@ type StartCmd struct {
 	DryRun     bool   `name:"dry-run" short:"n" help:"Do not start, print docker start command and exit."`
 	DockerArgs string `name:"docker-args" help:"Extra arguments to pass when running docker."`
 	RunImage   string `name:"run-image" help:"Start with a custom image."`
-	Supervised bool   `name:"supervised" help:"Attach the running container on start."`
+	Supervised bool   `name:"supervised" env:"SUPERVISED" help:"Attach the running container on start."`
 
 	extraEnv []string
 }
@@ -46,6 +50,22 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 	if exists && !r.DryRun {
 		fmt.Fprintln(utils.Out, "starting up existing container")
 		cmd := exec.CommandContext(*ctx, utils.DockerPath, "start", r.Config)
+		if r.Supervised {
+			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+			cmd.Cancel = func() error {
+				if runtime.GOOS == "darwin" {
+					runCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+					stopCmd := exec.CommandContext(runCtx, utils.DockerPath, "stop", r.Config)
+					utils.CmdRunner(stopCmd).Run()
+					cancel()
+				}
+				return unix.Kill(-cmd.Process.Pid, unix.SIGINT)
+			}
+			cmd.Args = append(cmd.Args, "--attach")
+			cmd.Stdin = os.Stdin
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+		}
 		fmt.Fprintln(utils.Out, cmd)
 		if err := utils.CmdRunner(cmd).Run(); err != nil {
 			return err
@@ -203,12 +223,18 @@ func (r *LogsCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type RebuildCmd struct {
-	Config    string `arg:"" name:"config" help:"config" predictor:"config"`
-	FullBuild bool   `name:"full-build" help:"Run a full build image even when migrate on boot and precompile on boot are present in the config."`
-	Clean     bool   `help:"also runs clean"`
+	Config           string `arg:"" name:"config" help:"config" predictor:"config"`
+	FullBuild        bool   `name:"full-build" help:"Run a full build image even when migrate on boot and precompile on boot are present in the config. Saves a fully built image with environment baked in. Without this flag, if MIGRATE_ON_BOOT is set in config it will defer migration until container start, and if PRECOMPILE_ON_BOOT is set in the config, it will defer configure step until container start."`
+	SkipVersionCheck bool   `env:"SKIP_VERSION_CHECK" help:"Skips launcher checking for a new version"`
+	Clean            bool   `help:"also runs clean"`
 }
 
 func (r *RebuildCmd) Run(cli *Cli, ctx *context.Context) error {
+
+	if !r.SkipVersionCheck {
+		CheckVersion()
+	}
+
 	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
