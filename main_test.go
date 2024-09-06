@@ -6,8 +6,9 @@ import (
 
 	"bytes"
 	"context"
-	ddocker "github.com/discourse/discourse_docker/launcher_go/v2"
+	ddocker "github.com/featheredtoast/launcher-extras"
 	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
+	"github.com/discourse/discourse_docker/launcher_go/v2/config"
 	"os"
 )
 
@@ -35,14 +36,6 @@ var _ = Describe("Generate", func() {
 		os.RemoveAll(testDir)
 	})
 
-	It("should allow concatenated templates", func() {
-		runner := ddocker.RawYamlCmd{Config: "test"}
-		runner.Run(cli)
-		Expect(out.String()).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
-		Expect(out.String()).To(ContainSubstring("_FILE_SEPERATOR_"))
-		Expect(out.String()).To(ContainSubstring("version: tests-passed"))
-	})
-
 	It("should output docker compose cmd to config name's subdir", func() {
 		runner := ddocker.DockerComposeCmd{Config: "test",
 			OutputDir: testDir}
@@ -53,23 +46,32 @@ var _ = Describe("Generate", func() {
 		Expect(string(out[:])).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
 	})
 
-	It("does not create output parent folders when not asked", func() {
+	It("should force create output parent folders", func() {
 		runner := ddocker.DockerComposeCmd{Config: "test",
 			OutputDir: testDir + "/subfolder/sub-subfolder"}
-		err := runner.Run(cli, &ctx)
-		Expect(err).ToNot(BeNil())
-		_, err = os.ReadFile(testDir + "/subfolder/sub-subfolder/test/config.yaml")
-		Expect(err).ToNot(BeNil())
-	})
-
-	It("should force create output parent folders when asked", func() {
-		runner := ddocker.DockerComposeCmd{Config: "test",
-			OutputDir: testDir + "/subfolder/sub-subfolder"}
-		cli.ForceMkdir = true
 		err := runner.Run(cli, &ctx)
 		Expect(err).To(BeNil())
 		out, err := os.ReadFile(testDir + "/subfolder/sub-subfolder/test/config.yaml")
 		Expect(err).To(BeNil())
 		Expect(string(out[:])).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
+	})
+
+	It("can write a docker compose setup", func() {
+		conf, _ := config.LoadConfig("./test/containers", "test", true, "./test")
+		ddocker.WriteDockerCompose(*conf, testDir, false)
+		out, err := os.ReadFile(testDir + "/.envrc")
+		Expect(err).To(BeNil())
+		Expect(string(out[:])).To(ContainSubstring("export DISCOURSE_HOSTNAME"))
+		out, err = os.ReadFile(testDir + "/config.yaml")
+		Expect(err).To(BeNil())
+		Expect(string(out[:])).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
+		out, err = os.ReadFile(testDir + "/Dockerfile")
+		Expect(err).To(BeNil())
+		Expect(string(out[:])).To(ContainSubstring("RUN cat /temp-config.yaml"))
+
+		out, err = os.ReadFile(testDir + "/docker-compose.yaml")
+		Expect(err).To(BeNil())
+		Expect(string(out[:])).To(ContainSubstring("build:"))
+		Expect(string(out[:])).To(ContainSubstring("image: local_discourse/test"))
 	})
 })
