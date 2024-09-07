@@ -36,8 +36,8 @@ type ConcourseTask struct {
 }
 
 type ConcourseConfig struct {
-	Namespace     string
-	Tag           string
+	FromNamespace     string `yaml:"from_namespace"`
+	FromTag           string `yaml:"from_tag"`
 	Dockerfile    string
 	ConcourseTask string `yaml:"concourse_task"`
 	Config        string
@@ -98,8 +98,8 @@ func GenConcourseConfig(config config.Config) string {
 	}
 
 	concourseConfig := &ConcourseConfig{
-		Namespace:     namespace,
-		Tag:           tag,
+		FromNamespace:     namespace,
+		FromTag:           tag,
 		Dockerfile:    config.Dockerfile("--skip-tags=precompile,migrate,db", false),
 		ConcourseTask: getConcourseTask(config),
 		Config:        config.Yaml(),
