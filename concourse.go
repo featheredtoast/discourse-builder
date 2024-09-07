@@ -3,8 +3,9 @@ package main
 import (
 	"bytes"
 	"errors"
-	"os"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/discourse/discourse_docker/launcher_go/v2/config"
 	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
@@ -35,6 +36,8 @@ type ConcourseTask struct {
 }
 
 type ConcourseConfig struct {
+	Namespace     string
+	Tag           string
 	Dockerfile    string
 	ConcourseTask string `yaml:"concourse_task"`
 	Config        string
@@ -86,7 +89,17 @@ func getConcourseTask(config config.Config) string {
 // to generate build jobs
 func GenConcourseConfig(config config.Config) string {
 
+	const defaultBaseImage = "discourse/base:2.0.20240825-0027"
+	parts := strings.Split(defaultBaseImage, ":")
+	namespace := parts[0]
+	tag := "latest"
+	if len(parts) > 1 {
+		tag = parts[1]
+	}
+
 	concourseConfig := &ConcourseConfig{
+		Namespace:     namespace,
+		Tag:           tag,
 		Dockerfile:    config.Dockerfile("--skip-tags=precompile,migrate,db", false),
 		ConcourseTask: getConcourseTask(config),
 		Config:        config.Yaml(),
